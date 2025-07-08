@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "waste_disposals",
+  "info": {
+    "singularName": "waste-disposal",
+    "pluralName": "waste-disposals",
+    "displayName": "WasteDisposal"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "disposal_date": {
+      "type": "date",
+      "required": true
+    },
+    "disposal_method": {
+      "type": "string",
+      "required": true
+    },
+    "disposal_location": {
+      "type": "string",
+      "required": true
+    },
+    "certificate_number": {
+      "type": "string"
+    },
+    "collection": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::waste-collection.waste-collection",
+      "inversedBy": "waste_disposal"
+    }
+  }
+}

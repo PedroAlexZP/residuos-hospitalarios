@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "waste_audits",
+  "info": {
+    "singularName": "waste-audit",
+    "pluralName": "waste-audits",
+    "displayName": "WasteAudit"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "audit_date": {
+      "type": "date",
+      "required": true
+    },
+    "auditor": {
+      "type": "string",
+      "required": true
+    },
+    "compliance_score": {
+      "type": "integer",
+      "required": true
+    },
+    "findings": {
+      "type": "string"
+    },
+    "department": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::department-attribute.department-attribute",
+      "inversedBy": "waste_audits"
+    }
+  }
+}
