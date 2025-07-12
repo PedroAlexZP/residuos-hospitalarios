@@ -88,7 +88,7 @@ export function WasteCollectionForm({ wasteCollection, onSuccess }: WasteCollect
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -114,7 +114,7 @@ export function WasteCollectionForm({ wasteCollection, onSuccess }: WasteCollect
                     placeholder="Número de elementos recolectados"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -139,7 +139,7 @@ export function WasteCollectionForm({ wasteCollection, onSuccess }: WasteCollect
                   placeholder="Nombre del responsable de la recolección"
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}

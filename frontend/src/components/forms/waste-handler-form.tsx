@@ -1,33 +1,45 @@
-"use client"
+"use client";
 
-import { useForm } from "@tanstack/react-form"
-import { zodValidator } from "@tanstack/zod-form-adapter"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useCreateWasteHandler, useUpdateWasteHandler } from "@/lib/queries"
-import type { WasteHandler } from "@/lib/types"
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useCreateWasteHandler, useUpdateWasteHandler } from "@/lib/queries";
+import type { WasteHandler } from "@/lib/types";
 
 const wasteHandlerSchema = z.object({
-  name: z.string().min(1, "El nombre es requerido").max(100, "Máximo 100 caracteres"),
+  name: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "Máximo 100 caracteres"),
   certification: z.string().min(1, "La certificación es requerida"),
   contact_info: z.string().min(1, "La información de contacto es requerida"),
   role: z.string().optional(),
-})
+});
 
 interface WasteHandlerFormProps {
-  wasteHandler?: WasteHandler
-  onSuccess?: () => void
+  wasteHandler?: WasteHandler;
+  onSuccess?: () => void;
 }
 
-export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormProps) {
-  const createMutation = useCreateWasteHandler()
-  const updateMutation = useUpdateWasteHandler()
+export function WasteHandlerForm({
+  wasteHandler,
+  onSuccess,
+}: WasteHandlerFormProps) {
+  const createMutation = useCreateWasteHandler();
+  const updateMutation = useUpdateWasteHandler();
 
-  const isEditing = !!wasteHandler
+  const isEditing = !!wasteHandler;
 
   const form = useForm({
     defaultValues: {
@@ -39,24 +51,29 @@ export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormPr
     onSubmit: async ({ value }) => {
       try {
         if (isEditing) {
-          await updateMutation.mutateAsync({ id: wasteHandler.id, data: value })
+          await updateMutation.mutateAsync({
+            id: wasteHandler.id,
+            data: value,
+          });
         } else {
-          await createMutation.mutateAsync(value)
+          await createMutation.mutateAsync(value);
         }
-        onSuccess?.()
+        onSuccess?.();
       } catch (error) {
-        console.error("Error submitting form:", error)
+        console.error("Error submitting form:", error);
       }
     },
     validatorAdapter: zodValidator(),
-  })
+  });
 
-  const isLoading = createMutation.isPending || updateMutation.isPending
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isEditing ? "Editar Operador" : "Registrar Operador"}</CardTitle>
+        <CardTitle>
+          {isEditing ? "Editar Operador" : "Registrar Operador"}
+        </CardTitle>
         <CardDescription>
           {isEditing
             ? "Modifica la información del operador"
@@ -66,9 +83,9 @@ export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormPr
       <CardContent>
         <form
           onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
           }}
           className="space-y-6"
         >
@@ -91,7 +108,9 @@ export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormPr
                     placeholder="Ej: EcoWaste Solutions"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
                   )}
                 </div>
               )}
@@ -115,7 +134,9 @@ export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormPr
                     placeholder="Ej: Transportista, Tratador, Disposición Final"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
                   )}
                 </div>
               )}
@@ -140,7 +161,9 @@ export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormPr
                   placeholder="Número de certificación o licencia"
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">
+                    {field.state.meta.errors[0]?.message}
+                  </p>
                 )}
               </div>
             )}
@@ -165,22 +188,32 @@ export function WasteHandlerForm({ wasteHandler, onSuccess }: WasteHandlerFormPr
                   rows={4}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">
+                    {field.state.meta.errors[0]?.message}
+                  </p>
                 )}
               </div>
             )}
           </form.Field>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => onSuccess?.()}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onSuccess?.()}
+            >
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Guardando..." : isEditing ? "Actualizar" : "Registrar"}
+              {isLoading
+                ? "Guardando..."
+                : isEditing
+                ? "Actualizar"
+                : "Registrar"}
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

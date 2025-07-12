@@ -1,5 +1,5 @@
 // Configuración de API y funciones base mejoradas con autenticación
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337/api"
 
 class ApiError extends Error {
   constructor(
@@ -61,7 +61,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   }
 }
 
-// Generic CRUD operations with better error handling\
+// Generic CRUD operations with better error handling
 export const createEntity = async <T>(endpoint: string, data: Partial<T>)
 : Promise<T> =>
 {
@@ -107,7 +107,7 @@ export const deleteEntity = async (endpoint: string, id: string): Promise<void> 
   })
 }
 
-// Bulk operations\
+// Bulk operations
 export const bulkCreate = async <T>(endpoint: string, items: Partial<T>[])
 : Promise<T[]> =>
 {
@@ -116,6 +116,8 @@ export const bulkCreate = async <T>(endpoint: string, items: Partial<T>[])
     body: JSON.stringify({ data: items }),
   })
 }
+
+const updates = [] // Declare the updates variable here
 
 export const bulkUpdate = async <T>(
   endpoint: string,

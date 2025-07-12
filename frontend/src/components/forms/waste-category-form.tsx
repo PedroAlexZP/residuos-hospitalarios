@@ -90,7 +90,7 @@ export function WasteCategoryForm({ wasteCategory, onSuccess }: WasteCategoryFor
                   placeholder="Ej: Residuos Patológicos"
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}
@@ -114,7 +114,7 @@ export function WasteCategoryForm({ wasteCategory, onSuccess }: WasteCategoryFor
                   placeholder="Ej: Alto, Medio, Bajo"
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}
@@ -139,7 +139,7 @@ export function WasteCategoryForm({ wasteCategory, onSuccess }: WasteCategoryFor
                   rows={4}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}
@@ -164,7 +164,7 @@ export function WasteCategoryForm({ wasteCategory, onSuccess }: WasteCategoryFor
                   rows={4}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}

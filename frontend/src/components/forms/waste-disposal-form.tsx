@@ -90,7 +90,7 @@ export function WasteDisposalForm({ wasteDisposal, onSuccess }: WasteDisposalFor
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -114,7 +114,7 @@ export function WasteDisposalForm({ wasteDisposal, onSuccess }: WasteDisposalFor
                     placeholder="Ej: CERT-2024-001"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -139,7 +139,7 @@ export function WasteDisposalForm({ wasteDisposal, onSuccess }: WasteDisposalFor
                   placeholder="Ej: Incineración, Autoclave, Enterramiento"
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}
@@ -163,7 +163,7 @@ export function WasteDisposalForm({ wasteDisposal, onSuccess }: WasteDisposalFor
                   placeholder="Dirección o ubicación del sitio de disposición"
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}

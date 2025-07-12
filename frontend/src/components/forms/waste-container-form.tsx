@@ -100,7 +100,7 @@ export function WasteContainerForm({ wasteContainer, onSuccess }: WasteContainer
                     placeholder="Ej: 50"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -128,7 +128,7 @@ export function WasteContainerForm({ wasteContainer, onSuccess }: WasteContainer
                     </SelectContent>
                   </Select>
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -157,7 +157,7 @@ export function WasteContainerForm({ wasteContainer, onSuccess }: WasteContainer
                   </SelectContent>
                 </Select>
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}
@@ -182,7 +182,7 @@ export function WasteContainerForm({ wasteContainer, onSuccess }: WasteContainer
                   rows={3}
                 />
                 {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                 )}
               </div>
             )}

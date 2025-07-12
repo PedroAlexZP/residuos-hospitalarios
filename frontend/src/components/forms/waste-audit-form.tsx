@@ -100,7 +100,7 @@ export function WasteAuditForm({ wasteAudit, onSuccess }: WasteAuditFormProps) {
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -127,7 +127,7 @@ export function WasteAuditForm({ wasteAudit, onSuccess }: WasteAuditFormProps) {
                     placeholder="0-100"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}
@@ -153,7 +153,7 @@ export function WasteAuditForm({ wasteAudit, onSuccess }: WasteAuditFormProps) {
                     placeholder="Nombre del auditor"
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                    <p className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</p>
                   )}
                 </div>
               )}

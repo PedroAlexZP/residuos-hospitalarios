@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { useTheme } from "next-themes"
-import { usePathname } from "next/navigation"
+import * as React from "react";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import { usePathname } from "next/navigation";
 import {
   FileText,
   Route,
@@ -30,24 +30,24 @@ import {
   AlertTriangle,
   BookOpen,
   ChevronDown,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useAuth } from "@/lib/auth"
-import { PERMISSIONS } from "@/lib/auth"
-import type { UserRole } from "@/lib/types"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/lib/auth";
+import { PERMISSIONS } from "@/lib/auth";
+import type { UserRole } from "@/lib/types";
 
 // Configuración de idiomas
 const languages = {
@@ -70,6 +70,8 @@ const languages = {
     training: "Capacitación y soporte",
     systemAdmin: "Administración del sistema",
     departments: "Departamentos",
+    categories: "Categorías",
+    containers: "Contenedores",
     // Submódulos
     wasteCollection: "Recolección interna",
     weighing: "Pesaje",
@@ -103,6 +105,8 @@ const languages = {
     training: "Training & Support",
     systemAdmin: "System Administration",
     departments: "Departments",
+    categories: "Categories",
+    containers: "Containers",
     // Submodules
     wasteCollection: "Internal Collection",
     weighing: "Weighing",
@@ -117,16 +121,26 @@ const languages = {
     parameters: "Parameter Management",
     permissions: "Permission Control",
   },
-}
+};
 
 // Configuración de navegación por rol con permisos
-const getNavigationItems = (role: UserRole, t: typeof languages.es, hasPermission: (permission: string) => boolean) => {
+const getNavigationItems = (
+  role: UserRole,
+  t: typeof languages.es,
+  hasPermission: (permission: string) => boolean
+) => {
   const baseItems = [
     {
       title: t.dashboard,
       icon: BarChart3,
       href: "/",
-      roles: ["generador", "supervisor", "transportista", "gestor_externo", "administrador"],
+      roles: [
+        "generador",
+        "supervisor",
+        "transportista",
+        "gestor_externo",
+        "administrador",
+      ],
       subItems: [],
     },
     {
@@ -146,6 +160,20 @@ const getNavigationItems = (role: UserRole, t: typeof languages.es, hasPermissio
       subItems: [],
     },
     {
+      title: t.categories,
+      icon: Tag,
+      href: "/categorias",
+      roles: ["administrador", "supervisor"],
+      subItems: [],
+    },
+    {
+      title: t.containers,
+      icon: Warehouse,
+      href: "/contenedores",
+      roles: ["administrador", "supervisor"],
+      subItems: [],
+    },
+    {
       title: t.labeling,
       icon: Tag,
       href: "/etiquetado",
@@ -159,9 +187,17 @@ const getNavigationItems = (role: UserRole, t: typeof languages.es, hasPermissio
       roles: ["supervisor", "transportista", "administrador"],
       permission: PERMISSIONS.VIEW_COLLECTION,
       subItems: [
-        { title: t.wasteCollection, href: "/trazabilidad/recoleccion", icon: Truck },
+        {
+          title: t.wasteCollection,
+          href: "/trazabilidad/recoleccion",
+          icon: Truck,
+        },
         { title: t.weighing, href: "/trazabilidad/pesaje", icon: Scale },
-        { title: t.temporaryStorage, href: "/trazabilidad/almacenamiento", icon: Warehouse },
+        {
+          title: t.temporaryStorage,
+          href: "/trazabilidad/almacenamiento",
+          icon: Warehouse,
+        },
       ],
     },
     {
@@ -170,9 +206,21 @@ const getNavigationItems = (role: UserRole, t: typeof languages.es, hasPermissio
       href: "/gestion-externa",
       roles: ["supervisor", "transportista", "gestor_externo", "administrador"],
       subItems: [
-        { title: t.delivery, href: "/gestion-externa/entrega", icon: ClipboardCheck },
-        { title: t.treatment, href: "/gestion-externa/tratamiento", icon: Settings },
-        { title: t.finalDestination, href: "/gestion-externa/destino-final", icon: Database },
+        {
+          title: t.delivery,
+          href: "/gestion-externa/entrega",
+          icon: ClipboardCheck,
+        },
+        {
+          title: t.treatment,
+          href: "/gestion-externa/tratamiento",
+          icon: Settings,
+        },
+        {
+          title: t.finalDestination,
+          href: "/gestion-externa/destino-final",
+          icon: Database,
+        },
       ],
     },
     {
@@ -182,18 +230,40 @@ const getNavigationItems = (role: UserRole, t: typeof languages.es, hasPermissio
       roles: ["supervisor", "gestor_externo", "administrador"],
       permission: PERMISSIONS.VIEW_REPORTS,
       subItems: [
-        { title: t.normativeReports, href: "/reportes/normativos", icon: FileText },
-        { title: t.compliancePanel, href: "/reportes/cumplimiento", icon: Shield },
+        {
+          title: t.normativeReports,
+          href: "/reportes/normativos",
+          icon: FileText,
+        },
+        {
+          title: t.compliancePanel,
+          href: "/reportes/cumplimiento",
+          icon: Shield,
+        },
       ],
     },
     {
       title: t.training,
       icon: GraduationCap,
       href: "/capacitacion",
-      roles: ["generador", "supervisor", "transportista", "gestor_externo", "administrador"],
+      roles: [
+        "generador",
+        "supervisor",
+        "transportista",
+        "gestor_externo",
+        "administrador",
+      ],
       subItems: [
-        { title: t.incidents, href: "/capacitacion/incidencias", icon: AlertTriangle },
-        { title: t.normativeLibrary, href: "/capacitacion/biblioteca", icon: BookOpen },
+        {
+          title: t.incidents,
+          href: "/capacitacion/incidencias",
+          icon: AlertTriangle,
+        },
+        {
+          title: t.normativeLibrary,
+          href: "/capacitacion/biblioteca",
+          icon: BookOpen,
+        },
       ],
     },
     {
@@ -203,54 +273,73 @@ const getNavigationItems = (role: UserRole, t: typeof languages.es, hasPermissio
       roles: ["administrador"],
       permission: PERMISSIONS.SYSTEM_CONFIG,
       subItems: [
-        { title: t.parameters, href: "/administracion/parametros", icon: Settings },
-        { title: t.permissions, href: "/administracion/permisos", icon: Shield },
+        {
+          title: t.parameters,
+          href: "/administracion/parametros",
+          icon: Settings,
+        },
+        {
+          title: t.permissions,
+          href: "/administracion/permisos",
+          icon: Shield,
+        },
       ],
     },
-  ]
+  ];
 
   return baseItems.filter((item) => {
     // Check role access
-    if (!item.roles.includes(role)) return false
+    if (!item.roles.includes(role)) return false;
 
     // Check permission if specified
-    if (item.permission && !hasPermission(item.permission)) return false
+    if (item.permission && !hasPermission(item.permission)) return false;
 
-    return true
-  })
-}
+    return true;
+  });
+};
 
 export default function Navbar() {
-  const { theme, setTheme } = useTheme()
-  const pathname = usePathname()
-  const [mounted, setMounted] = React.useState(false)
-  const [language, setLanguage] = React.useState<"es" | "en">("es")
-  const [isOpen, setIsOpen] = React.useState(false)
-  const [expandedItems, setExpandedItems] = React.useState<string[]>([])
+  const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+  const [mounted, setMounted] = React.useState(false);
+  const [language, setLanguage] = React.useState<"es" | "en">("es");
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
 
-  const { user, logout, hasPermission } = useAuth()
+  const { user, logout, hasPermission } = useAuth();
 
-  const t = languages[language]
-  const navigationItems = user ? getNavigationItems(user.role, t, hasPermission) : []
+  const t = languages[language];
+  const navigationItems = user
+    ? getNavigationItems(user.role, t, hasPermission)
+    : [];
 
   React.useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   const toggleExpanded = (href: string) => {
-    setExpandedItems((prev) => (prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]))
-  }
+    setExpandedItems((prev) =>
+      prev.includes(href)
+        ? prev.filter((item) => item !== href)
+        : [...prev, href]
+    );
+  };
 
   const getRoleBadgeColor = (role: UserRole) => {
     const colors = {
-      generador: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      supervisor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      transportista: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      gestor_externo: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-      administrador: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-    }
-    return colors[role]
-  }
+      generador:
+        "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      supervisor:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      transportista:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      gestor_externo:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      administrador:
+        "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+    };
+    return colors[role];
+  };
 
   const getRoleLabel = (role: UserRole) => {
     const labels = {
@@ -259,12 +348,12 @@ export default function Navbar() {
       transportista: "Transportista",
       gestor_externo: "Gestor Externo",
       administrador: "Administrador",
-    }
-    return labels[role]
-  }
+    };
+    return labels[role];
+  };
 
   if (!mounted || !user) {
-    return null
+    return null;
   }
 
   const NavContent = () => (
@@ -288,7 +377,9 @@ export default function Navbar() {
             <Button variant="ghost" className="w-full justify-between p-2">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar || "/placeholder.svg?height=32&width=32"} />
+                  <AvatarImage
+                    src={user.avatar || "/placeholder.svg?height=32&width=32"}
+                  />
                   <AvatarFallback>
                     {user.name
                       .split(" ")
@@ -298,7 +389,10 @@ export default function Navbar() {
                 </Avatar>
                 <div className="flex flex-col items-start">
                   <span className="text-sm font-medium">{user.name}</span>
-                  <Badge variant="secondary" className={`text-xs ${getRoleBadgeColor(user.role)}`}>
+                  <Badge
+                    variant="secondary"
+                    className={`text-xs ${getRoleBadgeColor(user.role)}`}
+                  >
                     {getRoleLabel(user.role)}
                   </Badge>
                 </div>
@@ -329,7 +423,11 @@ export default function Navbar() {
       <div className="px-4 pb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-between bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-between bg-transparent"
+            >
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 <span>{language === "es" ? "Español" : "English"}</span>
@@ -338,8 +436,12 @@ export default function Navbar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => setLanguage("es")}>🇪🇸 Español</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLanguage("en")}>🇺🇸 English</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage("es")}>
+              🇪🇸 Español
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage("en")}>
+              🇺🇸 English
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -360,16 +462,25 @@ export default function Navbar() {
               <Link
                 href={item.href}
                 className={`flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  pathname === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                  pathname === item.href
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground"
                 }`}
               >
                 <item.icon className="h-4 w-4" />
                 {item.title}
               </Link>
               {item.subItems.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={() => toggleExpanded(item.href)} className="h-8 w-8 p-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleExpanded(item.href)}
+                  className="h-8 w-8 p-0"
+                >
                   <ChevronDown
-                    className={`h-4 w-4 transition-transform ${expandedItems.includes(item.href) ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 transition-transform ${
+                      expandedItems.includes(item.href) ? "rotate-180" : ""
+                    }`}
                   />
                 </Button>
               )}
@@ -381,7 +492,9 @@ export default function Navbar() {
                     key={subItem.href}
                     href={subItem.href}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                      pathname === subItem.href ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                      pathname === subItem.href
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
                     <subItem.icon className="h-3 w-3" />
@@ -405,24 +518,36 @@ export default function Navbar() {
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="w-full justify-start gap-3"
         >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
           {theme === "dark" ? t.lightMode : t.darkMode}
         </Button>
 
         {/* Help */}
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-3"
+        >
           <HelpCircle className="h-4 w-4" />
           {t.help}
         </Button>
 
         {/* Database */}
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-3"
+        >
           <Database className="h-4 w-4" />
           {t.database}
         </Button>
       </div>
     </>
-  )
+  );
 
   return (
     <>
@@ -435,7 +560,11 @@ export default function Navbar() {
       <div className="md:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="fixed top-4 left-4 z-50">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="fixed top-4 left-4 z-50"
+            >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -447,5 +576,5 @@ export default function Navbar() {
         </Sheet>
       </div>
     </>
-  )
+  );
 }
