@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { useForm } from "@tanstack/react-form";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { z } from "zod";
@@ -213,6 +214,27 @@ export function WasteHandlerForm({
             </Button>
           </div>
         </form>
+=======
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+interface WasteHandlerFormProps {
+  onSuccess?: () => void
+}
+
+export function WasteHandlerForm({ onSuccess }: WasteHandlerFormProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Manejador de Residuos</CardTitle>
+        <CardDescription>Formulario en desarrollo</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p>Formulario en desarrollo...</p>
+        <Button onClick={onSuccess} className="mt-4">
+          Guardar
+        </Button>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
       </CardContent>
     </Card>
   );

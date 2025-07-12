@@ -1,22 +1,8 @@
 "use client"
 
-import { useForm } from "@tanstack/react-form"
-import { zodValidator } from "@tanstack/zod-form-adapter"
-import { z } from "zod"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useCreateWasteCategory, useUpdateWasteCategory } from "@/lib/queries"
 import type { WasteCategory } from "@/lib/types"
-
-const wasteCategorySchema = z.object({
-  name: z.string().min(1, "El nombre es requerido").max(100, "Máximo 100 caracteres"),
-  handling_protocol: z.string().min(1, "El protocolo de manejo es requerido"),
-  disposal_method: z.string().min(1, "El método de disposición es requerido"),
-  hazard_level: z.string().optional(),
-})
 
 interface WasteCategoryFormProps {
   wasteCategory?: WasteCategory
@@ -24,46 +10,14 @@ interface WasteCategoryFormProps {
 }
 
 export function WasteCategoryForm({ wasteCategory, onSuccess }: WasteCategoryFormProps) {
-  const createMutation = useCreateWasteCategory()
-  const updateMutation = useUpdateWasteCategory()
-
-  const isEditing = !!wasteCategory
-
-  const form = useForm({
-    defaultValues: {
-      name: wasteCategory?.name || "",
-      handling_protocol: wasteCategory?.handling_protocol || "",
-      disposal_method: wasteCategory?.disposal_method || "",
-      hazard_level: wasteCategory?.hazard_level || "",
-    },
-    onSubmit: async ({ value }) => {
-      try {
-        if (isEditing) {
-          await updateMutation.mutateAsync({ id: wasteCategory.id, data: value })
-        } else {
-          await createMutation.mutateAsync(value)
-        }
-        onSuccess?.()
-      } catch (error) {
-        console.error("Error submitting form:", error)
-      }
-    },
-    validatorAdapter: zodValidator(),
-  })
-
-  const isLoading = createMutation.isPending || updateMutation.isPending
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isEditing ? "Editar Categoría de Residuo" : "Crear Categoría de Residuo"}</CardTitle>
-        <CardDescription>
-          {isEditing
-            ? "Modifica la información de la categoría"
-            : "Completa la información para crear una nueva categoría"}
-        </CardDescription>
+        <CardTitle>{wasteCategory ? 'Editar' : 'Crear'} Categoría de Residuos</CardTitle>
+        <CardDescription>Formulario en desarrollo</CardDescription>
       </CardHeader>
       <CardContent>
+<<<<<<< HEAD
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -179,6 +133,13 @@ export function WasteCategoryForm({ wasteCategory, onSuccess }: WasteCategoryFor
             </Button>
           </div>
         </form>
+=======
+        <p>Formulario en desarrollo...</p>
+        {wasteCategory && <p>Editando: {wasteCategory.name}</p>}
+        <Button onClick={onSuccess} className="mt-4">
+          Guardar
+        </Button>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
       </CardContent>
     </Card>
   )

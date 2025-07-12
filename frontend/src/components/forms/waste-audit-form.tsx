@@ -1,78 +1,21 @@
 "use client"
 
-import { useForm } from "@tanstack/react-form"
-import { zodValidator } from "@tanstack/zod-form-adapter"
-import { z } from "zod"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useCreateWasteAudit, useUpdateWasteAudit, useDepartments } from "@/lib/queries"
-import type { WasteAudit } from "@/lib/types"
-
-const wasteAuditSchema = z.object({
-  audit_date: z.string().min(1, "La fecha de auditoría es requerida"),
-  auditor: z.string().min(1, "El auditor es requerido"),
-  compliance_score: z.number().min(0, "El puntaje debe ser mayor o igual a 0").max(100, "El puntaje máximo es 100"),
-  findings: z.string().optional(),
-  department: z.string().optional(),
-})
 
 interface WasteAuditFormProps {
-  wasteAudit?: WasteAudit
   onSuccess?: () => void
 }
 
-export function WasteAuditForm({ wasteAudit, onSuccess }: WasteAuditFormProps) {
-  const createMutation = useCreateWasteAudit()
-  const updateMutation = useUpdateWasteAudit()
-  const { data: departments = [] } = useDepartments()
-
-  const isEditing = !!wasteAudit
-
-  const form = useForm({
-    defaultValues: {
-      audit_date: wasteAudit?.audit_date ? wasteAudit.audit_date.split("T")[0] : "",
-      auditor: wasteAudit?.auditor || "",
-      compliance_score: wasteAudit?.compliance_score || 0,
-      findings: wasteAudit?.findings || "",
-      department: wasteAudit?.department?.id || "",
-    },
-    onSubmit: async ({ value }) => {
-      try {
-        const submitData = {
-          ...value,
-          department: value.department || undefined,
-        }
-
-        if (isEditing) {
-          await updateMutation.mutateAsync({ id: wasteAudit.id, data: submitData })
-        } else {
-          await createMutation.mutateAsync(submitData)
-        }
-        onSuccess?.()
-      } catch (error) {
-        console.error("Error submitting form:", error)
-      }
-    },
-    validatorAdapter: zodValidator(),
-  })
-
-  const isLoading = createMutation.isPending || updateMutation.isPending
-
+export function WasteAuditForm({ onSuccess }: WasteAuditFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isEditing ? "Editar Auditoría" : "Registrar Auditoría"}</CardTitle>
-        <CardDescription>
-          {isEditing
-            ? "Modifica la información de la auditoría"
-            : "Completa la información para registrar una nueva auditoría"}
-        </CardDescription>
+        <CardTitle>Auditoría de Residuos</CardTitle>
+        <CardDescription>Formulario en desarrollo</CardDescription>
       </CardHeader>
       <CardContent>
+<<<<<<< HEAD
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -222,6 +165,12 @@ export function WasteAuditForm({ wasteAudit, onSuccess }: WasteAuditFormProps) {
             </Button>
           </div>
         </form>
+=======
+        <p>Formulario en desarrollo...</p>
+        <Button onClick={onSuccess} className="mt-4">
+          Guardar
+        </Button>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
       </CardContent>
     </Card>
   )

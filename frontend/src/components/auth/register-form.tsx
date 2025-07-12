@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { zodValidator } from "@tanstack/zod-form-adapter";
@@ -25,6 +26,21 @@ import {
 } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
 import type { UserRole } from "@/lib/types";
+=======
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import Link from "next/link"
+import { Eye, EyeOff, Shield } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuth } from "@/lib/auth"
+import type { UserRole } from "@/lib/types"
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
 const registerSchema = z
   .object({
@@ -50,6 +66,8 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
+type RegisterFormData = z.infer<typeof registerSchema>
+
 const roleOptions = [
   { value: "generador", label: "Generador de Residuos" },
   { value: "supervisor", label: "Supervisor Ambiental" },
@@ -58,28 +76,42 @@ const roleOptions = [
 ];
 
 export function RegisterForm() {
+<<<<<<< HEAD
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register, isLoading } = useAuth();
+=======
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const { register: registerUser, isLoading } = useAuth()
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
-  const form = useForm({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      firstName: "",
-      lastName: "",
-      department: "",
-      phone: "",
-      role: "generador" as UserRole,
+      role: "generador",
     },
+<<<<<<< HEAD
     onSubmit: async ({ value }) => {
       const { confirmPassword, ...registerData } = value;
       await register(registerData);
     },
     validatorAdapter: zodValidator(),
   });
+=======
+  })
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
+
+  const onSubmit = async (data: RegisterFormData) => {
+    const { confirmPassword, ...registerData } = data
+    await registerUser(registerData)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -106,6 +138,7 @@ export function RegisterForm() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+<<<<<<< HEAD
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -138,9 +171,23 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Nombre *</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="Ingresa tu nombre"
+                    {...register("firstName")}
+                  />
+                  {errors.firstName && (
+                    <p className="text-sm text-red-600">{errors.firstName.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
 
+<<<<<<< HEAD
                 <form.Field
                   name="lastName"
                   validators={{
@@ -164,11 +211,23 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Apellido *</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Ingresa tu apellido"
+                    {...register("lastName")}
+                  />
+                  {errors.lastName && (
+                    <p className="text-sm text-red-600">{errors.lastName.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< HEAD
                 <form.Field
                   name="username"
                   validators={{
@@ -192,9 +251,21 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="username">Usuario *</Label>
+                  <Input
+                    id="username"
+                    placeholder="Nombre de usuario"
+                    {...register("username")}
+                  />
+                  {errors.username && (
+                    <p className="text-sm text-red-600">{errors.username.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
 
+<<<<<<< HEAD
                 <form.Field
                   name="email"
                   validators={{
@@ -219,11 +290,24 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-red-600">{errors.email.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< HEAD
                 <form.Field
                   name="department"
                   validators={{
@@ -247,9 +331,21 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="department">Departamento *</Label>
+                  <Input
+                    id="department"
+                    placeholder="Departamento de trabajo"
+                    {...register("department")}
+                  />
+                  {errors.department && (
+                    <p className="text-sm text-red-600">{errors.department.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
 
+<<<<<<< HEAD
                 <form.Field
                   name="phone"
                   validators={{
@@ -273,10 +369,22 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono *</Label>
+                  <Input
+                    id="phone"
+                    placeholder="Número de teléfono"
+                    {...register("phone")}
+                  />
+                  {errors.phone && (
+                    <p className="text-sm text-red-600">{errors.phone.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
               </div>
 
+<<<<<<< HEAD
               <form.Field
                 name="role"
                 validators={{
@@ -307,10 +415,29 @@ export function RegisterForm() {
                       </p>
                     )}
                   </div>
+=======
+              <div className="space-y-2">
+                <Label htmlFor="role">Rol *</Label>
+                <Select onValueChange={(value: string) => setValue("role", value as "generador" | "supervisor" | "transportista" | "gestor_externo")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona tu rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.role && (
+                  <p className="text-sm text-red-600">{errors.role.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                 )}
-              </form.Field>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< HEAD
                 <form.Field
                   name="password"
                   validators={{
@@ -350,9 +477,33 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña *</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      {...register("password")}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm text-red-600">{errors.password.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
 
+<<<<<<< HEAD
                 <form.Field
                   name="confirmPassword"
                   validators={{
@@ -394,8 +545,31 @@ export function RegisterForm() {
                         </p>
                       )}
                     </div>
+=======
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      {...register("confirmPassword")}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                   )}
-                </form.Field>
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>

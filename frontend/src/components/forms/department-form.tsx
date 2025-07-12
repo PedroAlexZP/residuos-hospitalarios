@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { useForm } from "@tanstack/react-form";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { z } from "zod";
@@ -16,6 +17,18 @@ import {
 } from "@/components/ui/card";
 import { useCreateDepartment, useUpdateDepartment } from "@/lib/queries";
 import type { DepartmentAttribute } from "@/lib/types";
+=======
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useCreateDepartment, useUpdateDepartment } from "@/lib/queries"
+import type { DepartmentAttribute } from "@/lib/types"
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
 const departmentSchema = z.object({
   name: z
@@ -24,6 +37,8 @@ const departmentSchema = z.object({
     .max(100, "Máximo 100 caracteres"),
   location: z.string().optional(),
 });
+
+type DepartmentFormData = z.infer<typeof departmentSchema>
 
 interface DepartmentFormProps {
   department?: DepartmentAttribute;
@@ -36,11 +51,17 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
 
   const isEditing = !!department;
 
-  const form = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<DepartmentFormData>({
+    resolver: zodResolver(departmentSchema),
     defaultValues: {
       name: department?.name || "",
       location: department?.location || "",
     },
+<<<<<<< HEAD
     onSubmit: async ({ value }) => {
       try {
         if (isEditing) {
@@ -57,6 +78,24 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+=======
+  })
+
+  const onSubmit = async (data: DepartmentFormData) => {
+    try {
+      if (isEditing) {
+        await updateMutation.mutateAsync({ id: department.id, data })
+      } else {
+        await createMutation.mutateAsync(data)
+      }
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error submitting form:", error)
+    }
+  }
+
+  const isLoading = createMutation.isPending || updateMutation.isPending
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
   return (
     <Card>
@@ -71,6 +110,7 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
+<<<<<<< HEAD
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -102,9 +142,22 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
                   </p>
                 )}
               </div>
+=======
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre *</Label>
+            <Input
+              id="name"
+              placeholder="Ej: Cirugía General"
+              {...register("name")}
+            />
+            {errors.name && (
+              <p className="text-sm text-red-600">{errors.name.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
             )}
-          </form.Field>
+          </div>
 
+<<<<<<< HEAD
           <form.Field
             name="location"
             validators={{
@@ -129,8 +182,20 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
                   </p>
                 )}
               </div>
+=======
+          <div className="space-y-2">
+            <Label htmlFor="location">Ubicación</Label>
+            <Textarea
+              id="location"
+              placeholder="Descripción de la ubicación del departamento..."
+              rows={3}
+              {...register("location")}
+            />
+            {errors.location && (
+              <p className="text-sm text-red-600">{errors.location.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
             )}
-          </form.Field>
+          </div>
 
           <div className="flex justify-end space-x-2">
             <Button

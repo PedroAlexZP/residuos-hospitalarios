@@ -3,6 +3,9 @@
 import { createContext, useContext } from "react"
 import type { User, UserRole } from "./types"
 
+// Re-export UserRole for easier access
+export type { UserRole } from "./types"
+
 // Strapi Auth Types
 export interface StrapiAuthResponse {
   jwt: string

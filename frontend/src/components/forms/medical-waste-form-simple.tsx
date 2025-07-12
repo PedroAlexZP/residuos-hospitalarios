@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { MedicalWaste } from "@/lib/types"
 
 const medicalWasteSchema = z.object({
   generation_date: z.string().min(1, "La fecha es requerida"),
@@ -19,23 +18,16 @@ const medicalWasteSchema = z.object({
 type MedicalWasteFormData = z.infer<typeof medicalWasteSchema>
 
 interface MedicalWasteFormProps {
-  medicalWaste?: MedicalWaste
   onSuccess?: () => void
 }
 
-export function MedicalWasteForm({ medicalWaste, onSuccess }: MedicalWasteFormProps) {
+export function MedicalWasteForm({ onSuccess }: MedicalWasteFormProps) {
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<MedicalWasteFormData>({
     resolver: zodResolver(medicalWasteSchema),
-    defaultValues: {
-      generation_date: medicalWaste?.generation_date || "",
-      weight: medicalWaste?.weight || "",
-      description: medicalWaste?.description || "",
-      department: medicalWaste?.department?.name || "",
-    },
   })
 
   const onSubmit = async (data: MedicalWasteFormData) => {
@@ -46,8 +38,8 @@ export function MedicalWasteForm({ medicalWaste, onSuccess }: MedicalWasteFormPr
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{medicalWaste ? 'Editar' : 'Registrar'} Residuo Médico</CardTitle>
-        <CardDescription>Formulario para {medicalWaste ? 'editar' : 'registrar'} un residuo médico</CardDescription>
+        <CardTitle>Registro de Residuo Médico</CardTitle>
+        <CardDescription>Formulario para registrar un nuevo residuo médico</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -99,7 +91,7 @@ export function MedicalWasteForm({ medicalWaste, onSuccess }: MedicalWasteFormPr
           </div>
 
           <Button type="submit" className="w-full">
-            {medicalWaste ? 'Actualizar' : 'Registrar'} Residuo
+            Registrar Residuo
           </Button>
         </form>
       </CardContent>
