@@ -1,5 +1,23 @@
-"use client"
+"use client";
 
+<<<<<<< HEAD
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
+import Link from "next/link";
+import { Eye, EyeOff, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAuth } from "@/lib/auth";
+=======
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,18 +29,30 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth"
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido").min(1, "El email es requerido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-})
+});
 
 type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false)
-  const { login, isLoading } = useAuth()
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, isLoading } = useAuth();
 
+<<<<<<< HEAD
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    onSubmit: async ({ value }) => {
+      await login(value.email, value.password);
+    },
+  });
+=======
   const {
     register,
     handleSubmit,
@@ -30,6 +60,7 @@ export function LoginForm() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   })
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
   const onSubmit = async (data: LoginFormData) => {
     await login(data.email, data.password)
@@ -44,17 +75,57 @@ export function LoginForm() {
               <Shield className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">Iniciar Sesión</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Sistema de Gestión de Residuos Hospitalarios</p>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
+            Iniciar Sesión
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Sistema de Gestión de Residuos Hospitalarios
+          </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Acceso al Sistema</CardTitle>
-            <CardDescription>Ingresa tus credenciales para acceder al sistema</CardDescription>
+            <CardDescription>
+              Ingresa tus credenciales para acceder al sistema
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form
+<<<<<<< HEAD
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              className="space-y-6"
+            >
+              <form.Field
+                name="email"
+                validators={{
+                  onChange: loginSchema.shape.email,
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Email *</Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="email"
+                      autoComplete="email"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="tu@email.com"
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="text-sm text-red-600">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+=======
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-6"
             >
@@ -69,9 +140,52 @@ export function LoginForm() {
                 />
                 {errors.email && (
                   <p className="text-sm text-red-600">{errors.email.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                 )}
               </div>
 
+<<<<<<< HEAD
+              <form.Field
+                name="password"
+                validators={{
+                  onChange: loginSchema.shape.password,
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Contraseña *</Label>
+                    <div className="relative">
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="text-sm text-red-600">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+=======
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña *</Label>
                 <div className="relative">
@@ -94,11 +208,15 @@ export function LoginForm() {
                 </div>
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password.message}</p>
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
                 )}
               </div>
 
               <div className="flex items-center justify-between">
-                <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-primary hover:text-primary/80"
+                >
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
@@ -110,7 +228,10 @@ export function LoginForm() {
               <div className="text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   ¿No tienes cuenta?{" "}
-                  <Link href="/register" className="text-primary hover:text-primary/80">
+                  <Link
+                    href="/register"
+                    className="text-primary hover:text-primary/80"
+                  >
                     Regístrate aquí
                   </Link>
                 </p>
@@ -122,7 +243,9 @@ export function LoginForm() {
         {/* Demo credentials */}
         <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
           <CardContent className="pt-6">
-            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Credenciales de Prueba:</h3>
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+              Credenciales de Prueba:
+            </h3>
             <div className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
               <p>
                 <strong>Administrador:</strong> admin@hospital.com / admin123
@@ -138,5 +261,5 @@ export function LoginForm() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

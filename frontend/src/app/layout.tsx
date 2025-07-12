@@ -1,3 +1,19 @@
+<<<<<<< HEAD
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import Navbar from "@/components/navbar";
+import { Providers } from "@/components/providers";
+
+
+export const metadata: Metadata = {
+  title: "Sistema de Gestión de Residuos Hospitalarios",
+  description:
+    "Sistema integral para la gestión, trazabilidad y cumplimiento normativo de residuos hospitalarios",
+};
+=======
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
@@ -29,11 +45,12 @@ function Providers({ children }: { children: React.ReactNode }) {
     </ClientQueryProvider>
   )
 }
+>>>>>>> 73da3e6f58d7b198fec3cea8715ed2f9f24db4f1
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
@@ -51,5 +68,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  )
+  );
 }

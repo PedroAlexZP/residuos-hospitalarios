@@ -1,5 +1,13 @@
-import { Shield, Activity, Users, FileText } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+"use client";
+
+import { Shield, Activity, Users, FileText } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -7,19 +15,24 @@ export default function Home() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Panel de Control</h1>
         <p className="text-muted-foreground">
-          Sistema de Gestión de Residuos Hospitalarios - Bienvenido al panel principal
+          Sistema de Gestión de Residuos Hospitalarios - Bienvenido al panel
+          principal
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Residuos Registrados</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Residuos Registrados
+            </CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+20.1% desde el mes pasado</p>
+            <p className="text-xs text-muted-foreground">
+              +20.1% desde el mes pasado
+            </p>
           </CardContent>
         </Card>
 
@@ -36,23 +49,31 @@ export default function Home() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Activos</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Usuarios Activos
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">+12 nuevos esta semana</p>
+            <p className="text-xs text-muted-foreground">
+              +12 nuevos esta semana
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reportes Pendientes</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Reportes Pendientes
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">2 vencen esta semana</p>
+            <p className="text-xs text-muted-foreground">
+              2 vencen esta semana
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -68,15 +89,21 @@ export default function Home() {
               <div className="flex items-center space-x-4">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Nuevo residuo registrado</p>
-                  <p className="text-xs text-muted-foreground">Hace 2 minutos</p>
+                  <p className="text-sm font-medium">
+                    Nuevo residuo registrado
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Hace 2 minutos
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">Recolección completada</p>
-                  <p className="text-xs text-muted-foreground">Hace 15 minutos</p>
+                  <p className="text-xs text-muted-foreground">
+                    Hace 15 minutos
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -114,5 +141,5 @@ export default function Home() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
