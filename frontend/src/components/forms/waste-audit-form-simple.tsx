@@ -3,11 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-interface WasteAuditFormProps {
-  onSuccess?: () => void
-}
-
-export function WasteAuditForm({ onSuccess }: WasteAuditFormProps) {
+export function WasteAuditForm() {
   return (
     <Card>
       <CardHeader>
@@ -16,9 +12,6 @@ export function WasteAuditForm({ onSuccess }: WasteAuditFormProps) {
       </CardHeader>
       <CardContent>
         <p>Formulario en desarrollo...</p>
-        <Button onClick={onSuccess} className="mt-4">
-          Guardar
-        </Button>
       </CardContent>
     </Card>
   )

@@ -166,7 +166,7 @@ export function RegisterForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="role">Rol *</Label>
-                <Select onValueChange={(value: string) => setValue("role", value as "generador" | "supervisor" | "transportista" | "gestor_externo")}>
+                <Select onValueChange={(value) => setValue("role", value as UserRole)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona tu rol" />
                   </SelectTrigger>

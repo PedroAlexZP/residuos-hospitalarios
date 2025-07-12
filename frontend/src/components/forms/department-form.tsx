@@ -1,7 +1,7 @@
 "use client"
 
-import { useForm } from "@tanstack/react-form"
-import { zodValidator } from "@tanstack/zod-form-adapter"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,8 @@ const departmentSchema = z.object({
   location: z.string().optional(),
 })
 
+type DepartmentFormData = z.infer<typeof departmentSchema>
+
 interface DepartmentFormProps {
   department?: DepartmentAttribute
   onSuccess?: () => void
@@ -27,25 +29,30 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
 
   const isEditing = !!department
 
-  const form = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<DepartmentFormData>({
+    resolver: zodResolver(departmentSchema),
     defaultValues: {
       name: department?.name || "",
       location: department?.location || "",
     },
-    onSubmit: async ({ value }) => {
-      try {
-        if (isEditing) {
-          await updateMutation.mutateAsync({ id: department.id, data: value })
-        } else {
-          await createMutation.mutateAsync(value)
-        }
-        onSuccess?.()
-      } catch (error) {
-        console.error("Error submitting form:", error)
-      }
-    },
-    validatorAdapter: zodValidator(),
   })
+
+  const onSubmit = async (data: DepartmentFormData) => {
+    try {
+      if (isEditing) {
+        await updateMutation.mutateAsync({ id: department.id, data })
+      } else {
+        await createMutation.mutateAsync(data)
+      }
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error submitting form:", error)
+    }
+  }
 
   const isLoading = createMutation.isPending || updateMutation.isPending
 
@@ -60,62 +67,31 @@ export function DepartmentForm({ department, onSuccess }: DepartmentFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
-          }}
-          className="space-y-6"
-        >
-          <form.Field
-            name="name"
-            validators={{
-              onChange: departmentSchema.shape.name,
-            }}
-          >
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Nombre *</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Ej: Cirugía General"
-                />
-                {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-                )}
-              </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre *</Label>
+            <Input
+              id="name"
+              placeholder="Ej: Cirugía General"
+              {...register("name")}
+            />
+            {errors.name && (
+              <p className="text-sm text-red-600">{errors.name.message}</p>
             )}
-          </form.Field>
+          </div>
 
-          <form.Field
-            name="location"
-            validators={{
-              onChange: departmentSchema.shape.location,
-            }}
-          >
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Ubicación</Label>
-                <Textarea
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Descripción de la ubicación del departamento..."
-                  rows={3}
-                />
-                {field.state.meta.errors.length > 0 && (
-                  <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-                )}
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="location">Ubicación</Label>
+            <Textarea
+              id="location"
+              placeholder="Descripción de la ubicación del departamento..."
+              rows={3}
+              {...register("location")}
+            />
+            {errors.location && (
+              <p className="text-sm text-red-600">{errors.location.message}</p>
             )}
-          </form.Field>
+          </div>
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onSuccess?.()}>

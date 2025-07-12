@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "@tanstack/react-form"
-import { zodValidator } from "@tanstack/zod-form-adapter"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
 import { Eye, EyeOff, Shield } from "lucide-react"
@@ -17,20 +17,23 @@ const loginSchema = z.object({
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 })
 
+type LoginFormData = z.infer<typeof loginSchema>
+
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const { login, isLoading } = useAuth()
 
-  const form = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-    onSubmit: async ({ value }) => {
-      await login(value.email, value.password)
-    },
-    validatorAdapter: zodValidator(),
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
   })
+
+  const onSubmit = async (data: LoginFormData) => {
+    await login(data.email, data.password)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -52,75 +55,47 @@ export function LoginForm() {
           </CardHeader>
           <CardContent>
             <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                form.handleSubmit()
-              }}
+              onSubmit={handleSubmit(onSubmit)}
               className="space-y-6"
             >
-              <form.Field
-                name="email"
-                validators={{
-                  onChange: loginSchema.shape.email,
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Email *</Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type="email"
-                      autoComplete="email"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="tu@email.com"
-                    />
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="tu@email.com"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
                 )}
-              </form.Field>
+              </div>
 
-              <form.Field
-                name="password"
-                validators={{
-                  onChange: loginSchema.shape.password,
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Contraseña *</Label>
-                    <div className="relative">
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="••••••••"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña *</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    {...register("password")}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600">{errors.password.message}</p>
                 )}
-              </form.Field>
+              </div>
 
               <div className="flex items-center justify-between">
                 <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">

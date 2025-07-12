@@ -61,28 +61,22 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   }
 }
 
-// Generic CRUD operations with better error handling\
-export const createEntity = async <T>(endpoint: string, data: Partial<T>)
-: Promise<T> =>
-{
+// Generic CRUD operations with better error handling
+export const createEntity = async <T>(endpoint: string, data: Partial<T>): Promise<T> => {
   return apiRequest<T>(endpoint, {
     method: "POST",
     body: JSON.stringify({ data }),
   })
 }
 
-export const getEntity = async <T>(endpoint: string, id: string)
-: Promise<T> =>
-{
+export const getEntity = async <T>(endpoint: string, id: string): Promise<T> => {
   return apiRequest<T>(`${endpoint}/${id}?populate=*`)
 }
 
 export const getEntities = async <T>(
   endpoint: string,
   params?: Record<string, string>
-)
-: Promise<T[]> =>
-{
+): Promise<T[]> => {
   const searchParams = params ? `?${new URLSearchParams(params)}&populate=*` : "?populate=*"
   const response = await apiRequest<{ data: T[] }>(`${endpoint}${searchParams}`)
   return response.data || []
@@ -92,9 +86,7 @@ export const updateEntity = async <T>(
   endpoint: string,
   id: string,
   data: Partial<T>
-)
-: Promise<T> =>
-{
+): Promise<T> => {
   return apiRequest<T>(`${endpoint}/${id}`, {
     method: "PUT",
     body: JSON.stringify({ data }),
@@ -107,10 +99,8 @@ export const deleteEntity = async (endpoint: string, id: string): Promise<void> 
   })
 }
 
-// Bulk operations\
-export const bulkCreate = async <T>(endpoint: string, items: Partial<T>[])
-: Promise<T[]> =>
-{
+// Bulk operations
+export const bulkCreate = async <T>(endpoint: string, items: Partial<T>[]): Promise<T[]> => {
   return apiRequest<T[]>(`${endpoint}/bulk`, {
     method: "POST",
     body: JSON.stringify({ data: items }),
@@ -119,11 +109,8 @@ export const bulkCreate = async <T>(endpoint: string, items: Partial<T>[])
 
 export const bulkUpdate = async <T>(
   endpoint: string,
-  updates: { id: string
-data: Partial<T>
-}[]
-): Promise<T[]> =>
-{
+  updates: { id: string; data: Partial<T> }[]
+): Promise<T[]> => {
   return apiRequest<T[]>(`${endpoint}/bulk`, {
     method: "PUT",
     body: JSON.stringify({ updates }),
