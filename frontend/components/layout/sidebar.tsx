@@ -26,8 +26,15 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  Languages,
+  Shield,
+  CheckSquare,
+  Plus,
+  BarChart3,
+  Activity,
 } from "lucide-react"
 import { useTheme } from "next-themes"
+import { useLanguage } from "@/hooks/use-language"
 import { getUserPermissions, hasPermission, type Permission } from "@/lib/permissions"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -37,6 +44,7 @@ interface SidebarProps {
 
 interface NavItem {
   title: string
+  translationKey: string
   href: string
   icon: React.ComponentType<{ className?: string }>
   roles: string[]
@@ -46,12 +54,14 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     title: "Dashboard",
+    translationKey: "dashboard",
     href: "/dashboard",
     icon: Home,
     roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
   },
   {
     title: "Residuos",
+    translationKey: "residuos",
     href: "/residuos",
     icon: Trash2,
     roles: ["generador", "supervisor", "admin"],
@@ -59,6 +69,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Etiquetas",
+    translationKey: "etiquetas",
     href: "/etiquetas",
     icon: QrCode,
     roles: ["generador", "supervisor", "admin"],
@@ -66,6 +77,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Pesaje",
+    translationKey: "pesaje",
     href: "/pesaje",
     icon: Scale,
     roles: ["supervisor", "transportista", "admin"],
@@ -73,6 +85,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Entregas",
+    translationKey: "entregas",
     href: "/entregas",
     icon: Truck,
     roles: ["supervisor", "transportista", "gestor_externo", "admin"],
@@ -80,6 +93,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Incidencias",
+    translationKey: "incidencias",
     href: "/incidencias",
     icon: AlertTriangle,
     roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
@@ -87,13 +101,23 @@ const navItems: NavItem[] = [
   },
   {
     title: "Reportes",
+    translationKey: "reportes",
     href: "/reportes",
     icon: FileText,
     roles: ["supervisor", "gestor_externo", "admin"],
     module: "reportes",
   },
   {
+    title: "Cumplimiento",
+    translationKey: "cumplimiento", 
+    href: "/cumplimiento",
+    icon: FileText,
+    roles: ["supervisor", "gestor_externo", "admin"],
+    module: "cumplimiento",
+  },
+  {
     title: "Capacitaciones",
+    translationKey: "capacitaciones",
     href: "/capacitaciones",
     icon: BookOpen,
     roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
@@ -101,6 +125,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Usuarios",
+    translationKey: "usuarios",
     href: "/usuarios",
     icon: Users,
     roles: ["admin"],
@@ -110,6 +135,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar({ className }: SidebarProps) {
   const { user, loading, signOut } = useAuth()
+  const { t, language, setLanguage } = useLanguage()
   const [permissions, setPermissions] = useState<Permission[]>([])
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
@@ -165,16 +191,16 @@ export function Sidebar({ className }: SidebarProps) {
             <Trash2 className="h-4 w-4" />
           </div>
           {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">Hospital Waste</span>
-              <span className="text-xs text-muted-foreground">Management</span>
+            <div className="flex flex-col animate-in slide-in-from-left-2 duration-200">
+              <span className="text-sm font-semibold">{t("appName")}</span>
+              <span className="text-xs text-muted-foreground">{t("appSubtitle")}</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
+      <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
         <nav className="space-y-2">
           {filteredNavItems.map((item) => {
             const Icon = item.icon
@@ -185,13 +211,13 @@ export function Sidebar({ className }: SidebarProps) {
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start gap-3 h-11",
-                    isActive && "bg-secondary font-medium",
+                    "w-full justify-start gap-3 h-11 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
                     isCollapsed && "px-2",
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
-                  {!isCollapsed && <span>{item.title}</span>}
+                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
             )
@@ -207,10 +233,23 @@ export function Sidebar({ className }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={cn("w-full justify-start gap-3", isCollapsed && "px-2")}
+            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2")}
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            {!isCollapsed && <span>Cambiar tema</span>}
+            {!isCollapsed && <span>{t("changeTheme")}</span>}
+          </Button>
+        </div>
+
+        {/* Language Toggle */}
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLanguage(language === "es" ? "en" : "es")}
+            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2")}
+          >
+            <Languages className="h-4 w-4" />
+            {!isCollapsed && <span>{t("changeLanguage")} ({language.toUpperCase()})</span>}
           </Button>
         </div>
 
@@ -219,7 +258,7 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="space-y-2">
             <Button
               variant="ghost"
-              className={cn("w-full justify-start gap-3 h-11", isCollapsed && "px-2")}
+              className={cn("w-full justify-start gap-3 h-11 sidebar-button", isCollapsed && "px-2")}
               onClick={() => setShowProfile(!showProfile)}
             >
               <Avatar className="h-6 w-6">
@@ -235,29 +274,29 @@ export function Sidebar({ className }: SidebarProps) {
                 <>
                   <div className="flex flex-col items-start text-left">
                     <span className="text-sm font-medium truncate max-w-[120px]">{user.nombre_completo}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{user.rol.replace("_", " ")}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{t(user.rol.replace("_", ""))}</span>
                   </div>
-                  <ChevronDown className="h-4 w-4 ml-auto" />
+                  <ChevronDown className={cn("h-4 w-4 ml-auto sidebar-transition", showProfile && "rotate-180")} />
                 </>
               )}
             </Button>
 
             {showProfile && !isCollapsed && (
-              <div className="space-y-1 pl-3">
+              <div className="space-y-1 pl-3 animate-in slide-in-from-top-2 duration-200">
                 <Link href="/perfil">
-                  <Button variant="ghost" size="sm" className="w-full justify-start gap-3">
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-3 sidebar-button">
                     <Settings className="h-4 w-4" />
-                    <span>Mi Perfil</span>
+                    <span>{t("profile")}</span>
                   </Button>
                 </Link>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 sidebar-button"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>Cerrar Sesión</span>
+                  <span>{t("logout")}</span>
                 </Button>
               </div>
             )}
@@ -272,7 +311,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Desktop Sidebar */}
       <div
         className={cn(
-          "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 lg:bg-background lg:border-r",
+          "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 lg:bg-background lg:border-r sidebar-transition",
           isCollapsed ? "lg:w-16" : "lg:w-64",
           className,
         )}
@@ -283,10 +322,10 @@ export function Sidebar({ className }: SidebarProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="absolute -right-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md"
+          className="absolute -right-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md hover:shadow-lg sidebar-transition"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
-          <Menu className="h-3 w-3" />
+          <Menu className={cn("h-3 w-3 sidebar-transition", isCollapsed && "rotate-180")} />
         </Button>
       </div>
 
@@ -295,7 +334,7 @@ export function Sidebar({ className }: SidebarProps) {
         <SheetTrigger asChild>
           <Button variant="ghost" size="sm" className="lg:hidden">
             <Menu className="h-5 w-5" />
-            <span className="sr-only">Abrir menú</span>
+            <span className="sr-only">{t("openMenu")}</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
