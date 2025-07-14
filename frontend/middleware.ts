@@ -3,77 +3,9 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
-
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    console.log("Middleware - Path:", req.nextUrl.pathname, "Session exists:", !!session)
-
-    // Rutas públicas que no requieren autenticación
-    const publicRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"]
-    const isPublicRoute = publicRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
-    
-    // Redirect root to appropriate page
-    if (req.nextUrl.pathname === "/") {
-      if (session) {
-        console.log("Redirecting authenticated user from root to dashboard")
-        return NextResponse.redirect(new URL("/dashboard", req.url))
-      } else {
-        console.log("Redirecting unauthenticated user from root to login")
-        return NextResponse.redirect(new URL("/auth/login", req.url))
-      }
-    }
-
-    // Si no hay sesión y no es ruta pública, redirigir a login
-    if (!session && !isPublicRoute) {
-      console.log("No session for protected route, redirecting to login")
-      const loginUrl = new URL("/auth/login", req.url)
-      // Add return URL for better UX
-      loginUrl.searchParams.set("returnUrl", req.nextUrl.pathname)
-      return NextResponse.redirect(loginUrl)
-    }
-
-    // Si hay sesión y está en ruta de auth, redirigir al dashboard
-    if (session && isPublicRoute) {
-      console.log("Authenticated user on auth route, redirecting to dashboard")
-      return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
-
-    // Basic role checking from user metadata
-    if (session) {
-      const userRole = session.user?.user_metadata?.rol
-      const pathname = req.nextUrl.pathname
-
-      console.log("User role:", userRole, "accessing:", pathname)
-
-      // Rutas restringidas por rol (simplificado)
-      const adminOnlyRoutes = ["/admin", "/usuarios", "/permisos"]
-      const supervisorRoutes = ["/reportes", "/cumplimiento"]
-
-      if (adminOnlyRoutes.some((route) => pathname.startsWith(route)) && userRole !== "admin") {
-        console.log("Access denied: admin only route")
-        return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
-      }
-
-      if (
-        supervisorRoutes.some((route) => pathname.startsWith(route)) &&
-        !["supervisor", "admin"].includes(userRole)
-      ) {
-        console.log("Access denied: supervisor/admin only route")
-        return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
-      }
-    }
-
-    console.log("Middleware - allowing request to continue")
-    return res
-  } catch (error) {
-    console.error("Middleware error:", error)
-    return NextResponse.redirect(new URL("/auth/login", req.url))
-  }
+  // Temporarily disable middleware for testing login redirect
+  console.log("Middleware - DISABLED for testing - Path:", req.nextUrl.pathname)
+  return NextResponse.next()
 }
 
 export const config = {

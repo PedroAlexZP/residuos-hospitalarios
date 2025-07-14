@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { signIn } from "@/lib/auth"
-import { ThemeToggle } from "@/components/theme-toggle"
+// import { ThemeToggle } from "@/components/theme-toggle" // Temporarily disabled
 
 export default function LoginPage() {
   const router = useRouter()
@@ -47,16 +47,17 @@ export default function LoginPage() {
     setSuccess(false)
 
     try {
-      await signIn(formData.email, formData.password)
+      console.log("Starting login with:", formData.email)
+      const data = await signIn(formData.email, formData.password)
+      console.log("Login successful, data:", data)
       setSuccess(true)
       
-      // Get return URL or default to dashboard
+      // Immediate redirect without delay for testing
       const returnUrl = searchParams.get("returnUrl") || "/dashboard"
+      console.log("Redirecting to:", returnUrl)
       
-      // Brief success state before redirect
-      setTimeout(() => {
-        window.location.replace(returnUrl) // Use replace for complete refresh
-      }, 1000)
+      // Try immediate redirect
+      window.location.replace(returnUrl)
     } catch (error: any) {
       console.error("Login error:", error)
       
@@ -84,10 +85,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      {/* Theme toggle in top right */}
-      <div className="absolute top-4 right-4">
+      {/* Theme toggle temporarily removed to avoid dependency errors */}
+      {/* <div className="absolute top-4 right-4">
         <ThemeToggle />
-      </div>
+      </div> */}
       
       <div className="w-full max-w-md">
         {/* Logo/Header */}
