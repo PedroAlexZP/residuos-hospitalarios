@@ -1,139 +1,270 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Trash2, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { signIn } from "@/lib/auth"
-import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { toast } = useToast()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    
+    // Check for error parameters from middleware
+    const errorParam = searchParams.get("error")
+    if (errorParam) {
+      switch (errorParam) {
+        case "account_disabled":
+          setError("Tu cuenta está desactivada. Contacta al administrador.")
+          break
+        case "insufficient_permissions":
+          setError("No tienes permisos para acceder a esa página.")
+          break
+        default:
+          break
+      }
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
+    setSuccess(false)
 
     try {
       await signIn(formData.email, formData.password)
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: "Bienvenido al sistema de gestión de residuos hospitalarios",
-      })
-      router.push("/dashboard")
+      setSuccess(true)
+      
+      // Get return URL or default to dashboard
+      const returnUrl = searchParams.get("returnUrl") || "/dashboard"
+      
+      // Brief success state before redirect
+      setTimeout(() => {
+        router.push(returnUrl)
+      }, 1000)
     } catch (error: any) {
       console.error("Login error:", error)
-      setError(error.message || "Error al iniciar sesión")
+      
+      // More specific error messages
+      let errorMessage = "Error al iniciar sesión"
+      if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "Credenciales inválidas. Verifica tu correo y contraseña."
+      } else if (error.message?.includes("Email not confirmed")) {
+        errorMessage = "Por favor, confirma tu correo electrónico antes de iniciar sesión."
+      } else if (error.message?.includes("Too many requests")) {
+        errorMessage = "Demasiados intentos. Espera unos minutos antes de intentar de nuevo."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
+  if (!mounted) {
+    return null
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Trash2 className="h-6 w-6" />
-            </div>
+    <div className="login-theme min-h-screen flex items-center justify-center p-4" 
+         style={{ backgroundColor: 'var(--login-bg)' }}>
+      <div className="w-full max-w-md">
+        {/* Logo/Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
+               style={{ 
+                 backgroundColor: 'var(--login-button-bg)',
+                 color: 'var(--login-button-text)'
+               }}>
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
+            </svg>
           </div>
-          <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
-          <CardDescription>Sistema de Gestión de Residuos Hospitalarios</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <h1 className="text-3xl font-bold tracking-tight" 
+              style={{ color: 'var(--login-text)' }}>
+            Bienvenido
+          </h1>
+          <p className="mt-2 text-sm" 
+             style={{ color: 'var(--login-text-muted)' }}>
+            Sistema de Gestión de Residuos Hospitalarios
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <div className="rounded-2xl shadow-lg border p-8"
+             style={{ 
+               backgroundColor: 'var(--login-card-bg)',
+               borderColor: 'var(--login-border)',
+               boxShadow: `0 20px 25px -5px var(--login-shadow), 0 10px 10px -5px var(--login-shadow)`
+             }}>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Message */}
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="rounded-lg p-4 flex items-start gap-3"
+                   style={{ 
+                     backgroundColor: 'var(--login-error-bg)',
+                     borderLeft: `4px solid var(--login-error-text)`
+                   }}>
+                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" 
+                            style={{ color: 'var(--login-error-text)' }} />
+                <p className="text-sm font-medium" 
+                   style={{ color: 'var(--login-error-text)' }}>
+                  {error}
+                </p>
+              </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
-              <Input
+            {/* Success Message */}
+            {success && (
+              <div className="rounded-lg p-4 flex items-center gap-3"
+                   style={{ 
+                     backgroundColor: '#f0fdf4',
+                     borderLeft: '4px solid #16a34a'
+                   }}>
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <p className="text-sm font-medium text-green-800">
+                  ¡Inicio de sesión exitoso! Redirigiendo...
+                </p>
+              </div>
+            )}
+
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" 
+                     className="block text-sm font-medium mb-2"
+                     style={{ color: 'var(--login-text)' }}>
+                Correo Electrónico
+              </label>
+              <input
                 id="email"
                 type="email"
                 placeholder="usuario@hospital.com"
                 value={formData.email}
                 onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 required
-                disabled={loading}
+                disabled={loading || success}
+                className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                style={{ 
+                  backgroundColor: 'var(--login-input-bg)',
+                  borderColor: 'var(--login-input-border)',
+                  color: 'var(--login-text)'
+                }}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" 
+                     className="block text-sm font-medium mb-2"
+                     style={{ color: 'var(--login-text)' }}>
+                Contraseña
+              </label>
               <div className="relative">
-                <Input
+                <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                   required
-                  disabled={loading}
+                  disabled={loading || success}
+                  className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 pr-12"
+                  style={{ 
+                    backgroundColor: 'var(--login-input-bg)',
+                    borderColor: 'var(--login-input-border)',
+                    color: 'var(--login-text)'
+                  }}
                 />
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors hover:opacity-70"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
+                  disabled={loading || success}
+                  style={{ color: 'var(--login-text-muted)' }}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}</span>
-                </Button>
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ 
+                backgroundColor: 'var(--login-button-bg)',
+                color: 'var(--login-button-text)'
+              }}
+            >
               {loading ? (
                 <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Iniciando sesión...
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  ¡Éxito!
                 </>
               ) : (
                 "Iniciar Sesión"
               )}
-            </Button>
+            </button>
 
-            <div className="text-center space-y-2">
+            {/* Links */}
+            <div className="space-y-4 text-center">
               <Link
                 href="/auth/reset-password"
-                className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                className="text-sm transition-colors hover:opacity-70"
+                style={{ color: 'var(--login-text-muted)' }}
               >
                 ¿Olvidaste tu contraseña?
               </Link>
 
-              <div className="text-sm text-muted-foreground">
-                ¿No tienes cuenta?{" "}
-                <Link href="/auth/register" className="text-primary hover:underline underline-offset-4">
-                  Regístrate aquí
-                </Link>
+              <div className="flex items-center">
+                <div className="flex-1 h-px" style={{ backgroundColor: 'var(--login-border)' }}></div>
+                <span className="px-4 text-xs" style={{ color: 'var(--login-text-muted)' }}>
+                  ¿No tienes cuenta?
+                </span>
+                <div className="flex-1 h-px" style={{ backgroundColor: 'var(--login-border)' }}></div>
               </div>
+
+              <Link
+                href="/auth/register"
+                className="text-sm font-medium transition-colors hover:opacity-70"
+                style={{ color: 'var(--login-button-bg)' }}
+              >
+                Crear cuenta nueva
+              </Link>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-xs" style={{ color: 'var(--login-text-muted)' }}>
+            © 2025 Sistema de Residuos Hospitalarios. Todos los derechos reservados.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

@@ -71,13 +71,52 @@ export const signUp = async (email: string, password: string, userData: Omit<Use
 }
 
 export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-  if (error) throw error
-  return data
+    if (error) {
+      // Handle specific Supabase auth errors
+      switch (error.message) {
+        case "Invalid login credentials":
+          throw new Error("Credenciales inválidas. Verifica tu correo y contraseña.")
+        case "Email not confirmed":
+          throw new Error("Por favor, confirma tu correo electrónico antes de iniciar sesión.")
+        case "Too many requests":
+          throw new Error("Demasiados intentos de inicio de sesión. Espera unos minutos antes de intentar de nuevo.")
+        case "User not found":
+          throw new Error("No existe una cuenta con este correo electrónico.")
+        default:
+          throw new Error(error.message || "Error al iniciar sesión")
+      }
+    }
+
+    // Verify user profile exists
+    if (data.user) {
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", data.user.id)
+        .single()
+
+      if (profileError || !profile) {
+        console.error("Profile verification error:", profileError)
+        throw new Error("Error al verificar el perfil de usuario. Contacta al administrador.")
+      }
+
+      // Check if user is active
+      if (!profile.activo) {
+        throw new Error("Tu cuenta está desactivada. Contacta al administrador.")
+      }
+    }
+
+    return data
+  } catch (error: any) {
+    console.error("SignIn error:", error)
+    throw error
+  }
 }
 
 export const signOut = async () => {
