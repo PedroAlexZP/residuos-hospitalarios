@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sidebar } from "./sidebar"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface HeaderProps {
   title?: string
@@ -34,6 +35,9 @@ export function Header({ title }: HeaderProps) {
             <Input placeholder="Buscar residuos, etiquetas..." className="pl-10" />
           </div>
         </div>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
         {/* Notifications */}
         <DropdownMenu>

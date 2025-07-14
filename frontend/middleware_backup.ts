@@ -11,8 +11,6 @@ export async function middleware(req: NextRequest) {
       data: { session },
     } = await supabase.auth.getSession()
 
-    console.log("Middleware - Path:", req.nextUrl.pathname, "Session exists:", !!session)
-
     // Rutas públicas que no requieren autenticación
     const publicRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"]
     const isPublicRoute = publicRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
@@ -20,17 +18,14 @@ export async function middleware(req: NextRequest) {
     // Redirect root to appropriate page
     if (req.nextUrl.pathname === "/") {
       if (session) {
-        console.log("Redirecting authenticated user from root to dashboard")
         return NextResponse.redirect(new URL("/dashboard", req.url))
       } else {
-        console.log("Redirecting unauthenticated user from root to login")
         return NextResponse.redirect(new URL("/auth/login", req.url))
       }
     }
 
     // Si no hay sesión y no es ruta pública, redirigir a login
     if (!session && !isPublicRoute) {
-      console.log("No session for protected route, redirecting to login")
       const loginUrl = new URL("/auth/login", req.url)
       // Add return URL for better UX
       loginUrl.searchParams.set("returnUrl", req.nextUrl.pathname)
@@ -39,7 +34,6 @@ export async function middleware(req: NextRequest) {
 
     // Si hay sesión y está en ruta de auth, redirigir al dashboard
     if (session && isPublicRoute) {
-      console.log("Authenticated user on auth route, redirecting to dashboard")
       return NextResponse.redirect(new URL("/dashboard", req.url))
     }
 
@@ -48,14 +42,11 @@ export async function middleware(req: NextRequest) {
       const userRole = session.user?.user_metadata?.rol
       const pathname = req.nextUrl.pathname
 
-      console.log("User role:", userRole, "accessing:", pathname)
-
       // Rutas restringidas por rol (simplificado)
       const adminOnlyRoutes = ["/admin", "/usuarios", "/permisos"]
       const supervisorRoutes = ["/reportes", "/cumplimiento"]
 
       if (adminOnlyRoutes.some((route) => pathname.startsWith(route)) && userRole !== "admin") {
-        console.log("Access denied: admin only route")
         return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
       }
 
@@ -63,12 +54,45 @@ export async function middleware(req: NextRequest) {
         supervisorRoutes.some((route) => pathname.startsWith(route)) &&
         !["supervisor", "admin"].includes(userRole)
       ) {
-        console.log("Access denied: supervisor/admin only route")
         return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
       }
     }
 
-    console.log("Middleware - allowing request to continue")
+    return res
+  } catch (error) {
+    console.error("Middleware error:", error)
+    return NextResponse.redirect(new URL("/auth/login", req.url))
+  }
+}
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|placeholder|.*\\.png|.*\\.svg|.*\\.jpg).*)"],
+}
+
+          const userRole = user.rol
+          const pathname = req.nextUrl.pathname
+
+          // Rutas restringidas por rol
+          const adminOnlyRoutes = ["/admin", "/usuarios", "/permisos"]
+          const supervisorRoutes = ["/reportes", "/cumplimiento"]
+
+          if (adminOnlyRoutes.some((route) => pathname.startsWith(route)) && userRole !== "admin") {
+            return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
+          }
+
+          if (
+            supervisorRoutes.some((route) => pathname.startsWith(route)) &&
+            !["supervisor", "admin"].includes(userRole)
+          ) {
+            return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
+          }
+        }
+      } catch (error) {
+        console.error("Error checking user permissions in middleware:", error)
+        // Continue without blocking if there's an error
+      }
+    }
+
     return res
   } catch (error) {
     console.error("Middleware error:", error)

@@ -11,7 +11,7 @@ export interface User {
 
 export const signUp = async (email: string, password: string, userData: Omit<User, "id" | "activo">) => {
   try {
-    // Create the user in auth with metadata
+    // First create the user in auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -26,6 +26,8 @@ export const signUp = async (email: string, password: string, userData: Omit<Use
 
     if (error) throw error
 
+    // For now, we'll just return the auth data
+    // The user profile will be created via database triggers or manually later
     return data
   } catch (error: any) {
     console.error("SignUp error:", error)
@@ -40,6 +42,27 @@ export const signUp = async (email: string, password: string, userData: Omit<Use
     }
 
     throw new Error(error.message || "Error al crear la cuenta")
+  }
+}
+
+    return data
+  } catch (error: any) {
+    console.error("SignUp error:", error)
+
+    // Handle specific errors
+    if (error.message?.includes("rate limit")) {
+      throw new Error("Demasiados intentos de registro. Espera un momento antes de intentar de nuevo.")
+    }
+
+    if (error.code === "42501") {
+      throw new Error("Error de permisos. Por favor, contacta al administrador del sistema.")
+    }
+
+    if (error.message?.includes("duplicate key")) {
+      throw new Error("Ya existe un usuario con este correo electrónico.")
+    }
+
+    throw error
   }
 }
 
@@ -66,17 +89,30 @@ export const signIn = async (email: string, password: string) => {
       }
     }
 
-    // Store user info in session storage for quick access
-    if (typeof window !== 'undefined' && data.user) {
-      const userProfile = {
-        id: data.user.id,
-        email: data.user.email,
-        nombre_completo: data.user.user_metadata?.nombre_completo || '',
-        rol: data.user.user_metadata?.rol || 'generador',
-        departamento: data.user.user_metadata?.departamento || '',
-        activo: true
+    // Verify user profile exists and is active
+    if (data.user) {
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", data.user.id)
+        .single()
+
+      if (profileError || !profile) {
+        console.error("Profile verification error:", profileError)
+        throw new Error("Error al verificar el perfil de usuario. Contacta al administrador.")
       }
-      sessionStorage.setItem('user_profile', JSON.stringify(userProfile))
+
+      // Check if user is active
+      if (!profile.activo) {
+        // Sign out the user if account is disabled
+        await supabase.auth.signOut()
+        throw new Error("Tu cuenta está desactivada. Contacta al administrador.")
+      }
+
+      // Store user info in session storage for quick access
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('user_profile', JSON.stringify(profile))
+      }
     }
 
     return data
@@ -108,27 +144,14 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
   if (!user) return null
 
-  // Try to get from session storage first
-  if (typeof window !== 'undefined') {
-    const cached = sessionStorage.getItem('user_profile')
-    if (cached) {
-      try {
-        return JSON.parse(cached)
-      } catch {
-        // If parsing fails, continue to fetch from user metadata
-      }
-    }
+  const { data: profile, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+
+  if (error) {
+    console.error("Error fetching user profile:", error)
+    return null
   }
 
-  // Fallback to user metadata
-  return {
-    id: user.id,
-    email: user.email || '',
-    nombre_completo: user.user_metadata?.nombre_completo || '',
-    rol: user.user_metadata?.rol || 'generador',
-    departamento: user.user_metadata?.departamento || '',
-    activo: true
-  }
+  return profile
 }
 
 export const resetPassword = async (email: string) => {
@@ -141,6 +164,13 @@ export const resetPassword = async (email: string) => {
 
 // Helper function to check if current user is admin
 export const isCurrentUserAdmin = async (): Promise<boolean> => {
-  const user = await getCurrentUser()
-  return user?.rol === 'admin' || false
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return false
+
+  const { data, error } = await supabase.from("admin_users").select("user_id").eq("user_id", user.id).single()
+
+  return !error && !!data
 }

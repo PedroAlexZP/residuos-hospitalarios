@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { signIn } from "@/lib/auth"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -54,7 +55,7 @@ export default function LoginPage() {
       
       // Brief success state before redirect
       setTimeout(() => {
-        router.push(returnUrl)
+        window.location.replace(returnUrl) // Use replace for complete refresh
       }, 1000)
     } catch (error: any) {
       console.error("Login error:", error)
@@ -82,50 +83,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-theme min-h-screen flex items-center justify-center p-4" 
-         style={{ backgroundColor: 'var(--login-bg)' }}>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      {/* Theme toggle in top right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
-               style={{ 
-                 backgroundColor: 'var(--login-button-bg)',
-                 color: 'var(--login-button-text)'
-               }}>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-6">
             <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
               <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z"/>
             </svg>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight" 
-              style={{ color: 'var(--login-text)' }}>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Bienvenido
           </h1>
-          <p className="mt-2 text-sm" 
-             style={{ color: 'var(--login-text-muted)' }}>
+          <p className="mt-2 text-sm text-muted-foreground">
             Sistema de Gestión de Residuos Hospitalarios
           </p>
         </div>
 
         {/* Login Form */}
-        <div className="rounded-2xl shadow-lg border p-8"
-             style={{ 
-               backgroundColor: 'var(--login-card-bg)',
-               borderColor: 'var(--login-border)',
-               boxShadow: `0 20px 25px -5px var(--login-shadow), 0 10px 10px -5px var(--login-shadow)`
-             }}>
+        <div className="rounded-2xl shadow-lg border border-border bg-card p-8">
           
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
-              <div className="rounded-lg p-4 flex items-start gap-3"
-                   style={{ 
-                     backgroundColor: 'var(--login-error-bg)',
-                     borderLeft: `4px solid var(--login-error-text)`
-                   }}>
-                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" 
-                            style={{ color: 'var(--login-error-text)' }} />
-                <p className="text-sm font-medium" 
-                   style={{ color: 'var(--login-error-text)' }}>
+              <div className="rounded-lg p-4 flex items-start gap-3 bg-destructive/15 border border-destructive/20">
+                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-destructive" />
+                <p className="text-sm font-medium text-destructive">
                   {error}
                 </p>
               </div>
@@ -133,13 +121,9 @@ export default function LoginPage() {
 
             {/* Success Message */}
             {success && (
-              <div className="rounded-lg p-4 flex items-center gap-3"
-                   style={{ 
-                     backgroundColor: '#f0fdf4',
-                     borderLeft: '4px solid #16a34a'
-                   }}>
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <p className="text-sm font-medium text-green-800">
+              <div className="rounded-lg p-4 flex items-center gap-3 bg-green-500/15 border border-green-500/20">
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-medium text-green-800 dark:text-green-300">
                   ¡Inicio de sesión exitoso! Redirigiendo...
                 </p>
               </div>
@@ -147,9 +131,7 @@ export default function LoginPage() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" 
-                     className="block text-sm font-medium mb-2"
-                     style={{ color: 'var(--login-text)' }}>
+              <label htmlFor="email" className="block text-sm font-medium mb-2 text-foreground">
                 Correo Electrónico
               </label>
               <input
@@ -160,20 +142,13 @@ export default function LoginPage() {
                 onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 required
                 disabled={loading || success}
-                className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
-                style={{ 
-                  backgroundColor: 'var(--login-input-bg)',
-                  borderColor: 'var(--login-input-border)',
-                  color: 'var(--login-text)'
-                }}
+                className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" 
-                     className="block text-sm font-medium mb-2"
-                     style={{ color: 'var(--login-text)' }}>
+              <label htmlFor="password" className="block text-sm font-medium mb-2 text-foreground">
                 Contraseña
               </label>
               <div className="relative">
@@ -185,19 +160,13 @@ export default function LoginPage() {
                   onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                   required
                   disabled={loading || success}
-                  className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 pr-12"
-                  style={{ 
-                    backgroundColor: 'var(--login-input-bg)',
-                    borderColor: 'var(--login-input-border)',
-                    color: 'var(--login-text)'
-                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-12"
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors hover:opacity-70"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors hover:opacity-70 text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading || success}
-                  style={{ color: 'var(--login-text-muted)' }}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -208,11 +177,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || success}
-              className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{ 
-                backgroundColor: 'var(--login-button-bg)',
-                color: 'var(--login-button-text)'
-              }}
+              className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-primary text-primary-foreground"
             >
               {loading ? (
                 <>
@@ -233,24 +198,22 @@ export default function LoginPage() {
             <div className="space-y-4 text-center">
               <Link
                 href="/auth/reset-password"
-                className="text-sm transition-colors hover:opacity-70"
-                style={{ color: 'var(--login-text-muted)' }}
+                className="text-sm transition-colors hover:opacity-70 text-muted-foreground"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
 
               <div className="flex items-center">
-                <div className="flex-1 h-px" style={{ backgroundColor: 'var(--login-border)' }}></div>
-                <span className="px-4 text-xs" style={{ color: 'var(--login-text-muted)' }}>
+                <div className="flex-1 h-px bg-border"></div>
+                <span className="px-4 text-xs text-muted-foreground">
                   ¿No tienes cuenta?
                 </span>
-                <div className="flex-1 h-px" style={{ backgroundColor: 'var(--login-border)' }}></div>
+                <div className="flex-1 h-px bg-border"></div>
               </div>
 
               <Link
                 href="/auth/register"
-                className="text-sm font-medium transition-colors hover:opacity-70"
-                style={{ color: 'var(--login-button-bg)' }}
+                className="text-sm font-medium transition-colors hover:opacity-70 text-primary"
               >
                 Crear cuenta nueva
               </Link>
@@ -260,7 +223,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-xs" style={{ color: 'var(--login-text-muted)' }}>
+          <p className="text-xs text-muted-foreground">
             © 2025 Sistema de Residuos Hospitalarios. Todos los derechos reservados.
           </p>
         </div>

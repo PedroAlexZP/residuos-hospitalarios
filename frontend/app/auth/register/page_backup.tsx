@@ -391,3 +391,11 @@ export default function RegisterPage() {
     </div>
   )
 }
+              </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useSupabase } from "@/lib/supabase-provider"
 import type { User } from "@/lib/auth"
+import { getCurrentUser, signOut } from "@/lib/auth"
 
 export function useAuth() {
   const { supabase, user: authUser, loading: authLoading } = useSupabase()
@@ -18,14 +19,8 @@ export function useAuth() {
       }
 
       try {
-        const { data: profile, error } = await supabase.from("users").select("*").eq("id", authUser.id).single()
-
-        if (error) {
-          console.error("Error fetching user profile:", error)
-          setUser(null)
-        } else {
-          setUser(profile)
-        }
+        const profile = await getCurrentUser()
+        setUser(profile)
       } catch (error) {
         console.error("Error loading user profile:", error)
         setUser(null)
@@ -37,14 +32,11 @@ export function useAuth() {
     if (!authLoading) {
       loadUserProfile()
     }
-  }, [authUser, authLoading, supabase])
+  }, [authUser, authLoading])
 
   return {
     user,
     loading: authLoading || loading,
-    signOut: async () => {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-    },
+    signOut,
   }
 }
