@@ -133,7 +133,19 @@ const navItems: NavItem[] = [
   },
 ]
 
-export function Sidebar({ className }: SidebarProps) {
+// Hook para detectar si es escritorio (md+)
+export function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const check = () => setIsDesktop(window.matchMedia("(min-width: 768px)").matches)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
+  return isDesktop
+}
+
+export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open?: boolean, onOpenChange?: (open: boolean) => void }) {
   const { user, loading, signOut } = useAuth()
   const { t, language, setLanguage } = useLanguage()
   const [permissions, setPermissions] = useState<Permission[]>([])
@@ -141,6 +153,10 @@ export function Sidebar({ className }: SidebarProps) {
   const [showProfile, setShowProfile] = useState(false)
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const isDesktop = useIsDesktop()
+
+  // Estado para abrir/cerrar el drawer en móvil
+  const [openDrawer, setOpenDrawer] = useState(false)
 
   useEffect(() => {
     const loadPermissions = async () => {
@@ -184,7 +200,8 @@ export function Sidebar({ className }: SidebarProps) {
 
   const filteredNavItems = navItems.filter(canAccessItem)
 
-  const SidebarContent = () => (
+  // Cambia SidebarContent para aceptar isCollapsed
+  const SidebarContent = ({ isCollapsed = false }: { isCollapsed?: boolean }) => (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex h-16 items-center border-b px-4">
@@ -215,7 +232,7 @@ export function Sidebar({ className }: SidebarProps) {
                   className={cn(
                     "w-full justify-start gap-3 h-11 sidebar-button",
                     isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2",
+                    isCollapsed && "px-2 justify-center"
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
@@ -235,7 +252,7 @@ export function Sidebar({ className }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2")}
+            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2 justify-center")}
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             {!isCollapsed && <span>{t("changeTheme")}</span>}
@@ -248,101 +265,62 @@ export function Sidebar({ className }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={() => setLanguage(language === "es" ? "en" : "es")}
-            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2")}
+            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2 justify-center")}
           >
             <Languages className="h-4 w-4" />
-            {!isCollapsed && <span>{t("changeLanguage")} ({language.toUpperCase()})</span>}
+            {!isCollapsed && <span>{t("changeLanguage")}</span>}
           </Button>
         </div>
 
-        {/* User Profile */}
-        {user && (
-          <div className="space-y-2">
-            <Button
-              variant="ghost"
-              className={cn("w-full justify-start gap-3 h-11 sidebar-button", isCollapsed && "px-2")}
-              onClick={() => setShowProfile(!showProfile)}
-            >
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs">
-                  {user.nombre_completo
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
-                <>
-                  <div className="flex flex-col items-start text-left">
-                    <span className="text-sm font-medium truncate max-w-[120px]">{user.nombre_completo}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{t(user.rol.replace("_", ""))}</span>
-                  </div>
-                  <ChevronDown className={cn("h-4 w-4 ml-auto sidebar-transition", showProfile && "rotate-180")} />
-                </>
-              )}
-            </Button>
-
-            {showProfile && !isCollapsed && (
-              <div className="space-y-1 pl-3 animate-in slide-in-from-top-2 duration-200">
-                <Link href="/perfil">
-                  <Button variant="ghost" size="sm" className="w-full justify-start gap-3 sidebar-button">
-                    <Settings className="h-4 w-4" />
-                    <span>{t("profile")}</span>
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 sidebar-button font-semibold border-t border-red-100 mt-2 pt-2"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>{t("logout")}</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2 justify-center")}
+        >
+          <LogOut className="h-4 w-4" />
+          {!isCollapsed && <span>{t("logout")}</span>}
+        </Button>
       </div>
     </div>
   )
 
-  return (
-    <>
-      {/* Desktop Sidebar */}
-      <div
-        className={cn(
-          "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 lg:bg-background lg:border-r sidebar-transition",
-          isCollapsed ? "lg:w-16" : "lg:w-64",
-          className,
-        )}
+  // Sidebar sticky y colapsable para escritorio
+  const DesktopSidebar = () => (
+    <aside
+      className={cn(
+        "hidden md:sticky md:top-0 md:bg-background md:border-r sidebar-transition",
+        isCollapsed ? "md:w-16" : "md:w-64",
+        "h-screen flex flex-col",
+        className
+      )}
+    >
+      <SidebarContent isCollapsed={isCollapsed} />
+      {/* Botón para colapsar/expandir solo en escritorio */}
+      <button
+        className="hidden md:block absolute -right-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md hover:shadow-lg sidebar-transition"
+        onClick={() => setIsCollapsed((v) => !v)}
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        type="button"
       >
-        <SidebarContent />
-
-        {/* Collapse Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute -right-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md hover:shadow-lg sidebar-transition"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          <Menu className={cn("h-3 w-3 sidebar-transition", isCollapsed && "rotate-180")} />
-        </Button>
-      </div>
-
-      {/* Mobile Sidebar */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="sm" className="lg:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">{t("openMenu")}</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-    </>
+        <Menu className={cn("h-4 w-4 sidebar-transition", isCollapsed && "rotate-180")} />
+      </button>
+    </aside>
   )
+
+  // Sidebar tipo drawer para móvil, ahora controlado por props
+  const MobileSidebar = () => (
+    <Sheet open={!!open} onOpenChange={onOpenChange}>
+      <SheetContent side="left" className="p-0 w-64 max-w-full">
+        <SidebarContent />
+      </SheetContent>
+    </Sheet>
+  )
+
+  return isDesktop ? <DesktopSidebar /> : <MobileSidebar />
 }
+
+// Permitir que el layout use el estado de colapso
+export const SIDEBAR_WIDTH = 256 // w-64
+export const SIDEBAR_COLLAPSED_WIDTH = 64 // w-16
