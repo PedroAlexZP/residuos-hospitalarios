@@ -102,6 +102,15 @@ export default function RegisterPage() {
       // Solo enviar rol si es válido
       const userRoles: UserRole[] = ["generador", "supervisor", "transportista", "gestor_externo", "admin"];
       const rolToSend = userRoles.includes(formData.rol as UserRole) ? formData.rol : undefined;
+      if (!rolToSend) {
+        toast({
+          title: "Error de validación",
+          description: "Selecciona un rol válido",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       await signUp(formData.email, formData.password, {
         nombre_completo: formData.nombre_completo,
