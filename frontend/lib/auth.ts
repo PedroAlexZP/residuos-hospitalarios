@@ -26,6 +26,19 @@ export const signUp = async (email: string, password: string, userData: Omit<Use
 
     if (error) throw error
 
+    // Crear perfil en public.users si el usuario fue creado
+    if (data.user) {
+      const { error: userError } = await supabase.from('users').insert({
+        id: data.user.id,
+        nombre_completo: userData.nombre_completo,
+        email: userData.email,
+        rol: userData.rol,
+        departamento: userData.departamento,
+        activo: true
+      })
+      if (userError) throw userError
+    }
+
     return data
   } catch (error: any) {
     console.error("SignUp error:", error)

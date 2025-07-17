@@ -81,6 +81,7 @@ export default function LoginPage() {
 
   if (!mounted) {
     return null
+    // No más código después de return
   }
 
   return (
