@@ -148,6 +148,8 @@ export function Sidebar({ className }: SidebarProps) {
         try {
           const userPermissions = await getUserPermissions(user.rol)
           setPermissions(userPermissions)
+          console.log("ROL DEL USUARIO:", user.rol)
+          console.log("PERMISOS OBTENIDOS:", userPermissions)
         } catch (error) {
           console.error("Error loading permissions:", error)
         }

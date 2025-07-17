@@ -26,6 +26,7 @@ import { supabase } from "@/lib/supabase"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Entrega {
   id: string
@@ -59,6 +60,7 @@ export default function EntregasPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterEstado, setFilterEstado] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
@@ -165,14 +167,14 @@ export default function EntregasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Entregas</h1>
-          <p className="text-muted-foreground">Entregas a gestores externos autorizados</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionEntregas")}</h1>
+          <p className="text-muted-foreground">{t("entregasGestoresExternos")}</p>
         </div>
         {user && ["supervisor", "transportista", "admin"].includes(user.rol) && (
           <Link href="/entregas/nueva">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Nueva Entrega
+              {t("nuevaEntrega")}
             </Button>
           </Link>
         )}
@@ -182,7 +184,7 @@ export default function EntregasPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entregas</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalEntregas")}</CardTitle>
             <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -193,7 +195,7 @@ export default function EntregasPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("pendientes")}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

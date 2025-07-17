@@ -15,6 +15,7 @@ import { getCurrentUser, type User } from "@/lib/auth"
 import { URGENCY_LEVELS } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Incidencia {
   id: string
@@ -42,6 +43,7 @@ export default function IncidenciasPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterUrgencia, setFilterUrgencia] = useState<string>("all")
   const [filterEstado, setFilterEstado] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
@@ -133,22 +135,24 @@ export default function IncidenciasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Incidencias</h1>
-          <p className="text-muted-foreground">Registro y seguimiento de incidencias del sistema</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionIncidencias")}</h1>
+          <p className="text-muted-foreground">{t("registroSeguimientoIncidencias")}</p>
         </div>
-        <Link href="/incidencias/nueva">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Reportar Incidencia
-          </Button>
-        </Link>
+        {user && ["generador", "supervisor", "admin"].includes(user.rol) && (
+          <Link href="/incidencias/nueva">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("nuevaIncidencia")}
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Incidencias</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalIncidencias")}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -331,7 +335,7 @@ export default function IncidenciasPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/incidencias/${incidencia.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalles
+                                  {t("verDetalles")}
                                 </Link>
                               </DropdownMenuItem>
                               {user &&

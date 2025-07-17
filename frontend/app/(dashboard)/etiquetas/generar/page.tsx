@@ -212,9 +212,7 @@ export default function GenerarEtiquetaPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {residuos.length === 0 ? (
-                      <SelectItem value="" disabled>
-                        No hay residuos disponibles
-                      </SelectItem>
+                      <div className="px-3 py-2 text-muted-foreground text-sm select-none">No hay residuos disponibles</div>
                     ) : (
                       residuos.map((residuo) => {
                         const type = WASTE_TYPES.find((w) => w.value === residuo.tipo)

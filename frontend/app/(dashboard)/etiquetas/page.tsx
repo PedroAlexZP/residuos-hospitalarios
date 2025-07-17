@@ -15,6 +15,7 @@ import { getCurrentUser, type User } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Etiqueta {
   id: string
@@ -40,6 +41,7 @@ export default function EtiquetasPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterTipo, setFilterTipo] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
@@ -130,14 +132,14 @@ export default function EtiquetasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Etiquetas</h1>
-          <p className="text-muted-foreground">Códigos QR y de barras para trazabilidad de residuos</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionEtiquetas")}</h1>
+          <p className="text-muted-foreground">{t("registroSeguimientoEtiquetas")}</p>
         </div>
         {user && ["generador", "supervisor", "admin"].includes(user.rol) && (
           <Link href="/etiquetas/generar">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Generar Etiqueta
+              {t("generarEtiqueta")}
             </Button>
           </Link>
         )}
@@ -147,7 +149,7 @@ export default function EtiquetasPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Etiquetas</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalEtiquetas")}</CardTitle>
             <QrCode className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -313,7 +315,7 @@ export default function EtiquetasPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/etiquetas/${etiqueta.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalles
+                                  {t("verDetalles")}
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handlePrint(etiqueta.id)}>

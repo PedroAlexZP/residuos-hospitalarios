@@ -16,6 +16,7 @@ import { getCurrentUser, type User } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Pesaje {
   id: string
@@ -44,6 +45,7 @@ export default function PesajePage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterTipo, setFilterTipo] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
@@ -145,14 +147,14 @@ export default function PesajePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Pesaje</h1>
-          <p className="text-muted-foreground">Registro de pesos y verificación de residuos</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionPesaje")}</h1>
+          <p className="text-muted-foreground">{t("registroSeguimientoPesaje")}</p>
         </div>
         {user && ["supervisor", "transportista", "admin"].includes(user.rol) && (
           <Link href="/pesaje/nuevo">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Nuevo Pesaje
+              {t("nuevoPesaje")}
             </Button>
           </Link>
         )}
@@ -162,7 +164,7 @@ export default function PesajePage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pesajes</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalPesajes")}</CardTitle>
             <Scale className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

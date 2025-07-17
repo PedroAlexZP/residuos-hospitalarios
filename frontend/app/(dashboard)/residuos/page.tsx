@@ -15,6 +15,7 @@ import { getCurrentUser, type User } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Residuo {
   id: string
@@ -42,6 +43,7 @@ export default function ResiduosPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterTipo, setFilterTipo] = useState<string>("all")
   const [filterEstado, setFilterEstado] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
@@ -134,14 +136,14 @@ export default function ResiduosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Residuos</h1>
-          <p className="text-muted-foreground">Registro y seguimiento de residuos hospitalarios</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionResiduos")}</h1>
+          <p className="text-muted-foreground">{t("registroSeguimientoResiduos")}</p>
         </div>
         {user && ["generador", "admin"].includes(user.rol) && (
           <Link href="/residuos/nuevo">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Registrar Residuo
+              {t("registrarResiduo")}
             </Button>
           </Link>
         )}
@@ -151,7 +153,7 @@ export default function ResiduosPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Residuos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalResiduos")}</CardTitle>
             <Trash2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -161,7 +163,7 @@ export default function ResiduosPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("pendientes")}</CardTitle>
             <div className="h-2 w-2 bg-yellow-500 rounded-full" />
           </CardHeader>
           <CardContent>
@@ -171,7 +173,7 @@ export default function ResiduosPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Etiquetados</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("etiquetados")}</CardTitle>
             <QrCode className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -333,7 +335,7 @@ export default function ResiduosPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/residuos/${residuo.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalles
+                                  {t("verDetalles")}
                                 </Link>
                               </DropdownMenuItem>
                               {user &&
@@ -341,7 +343,7 @@ export default function ResiduosPage() {
                                   <DropdownMenuItem asChild>
                                     <Link href={`/residuos/${residuo.id}/editar`}>
                                       <Edit className="mr-2 h-4 w-4" />
-                                      Editar
+                                      {t("editar")}
                                     </Link>
                                   </DropdownMenuItem>
                                 )}
@@ -349,7 +351,7 @@ export default function ResiduosPage() {
                                 <DropdownMenuItem asChild>
                                   <Link href={`/etiquetas/generar?residuo=${residuo.id}`}>
                                     <QrCode className="mr-2 h-4 w-4" />
-                                    Generar etiqueta
+                                    {t("generarEtiqueta")}
                                   </Link>
                                 </DropdownMenuItem>
                               )}

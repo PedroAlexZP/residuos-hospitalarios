@@ -60,7 +60,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando dashboard...</p>
+          <p className="text-muted-foreground">{t("loadingDashboard")}</p>
         </div>
       </div>
     )
@@ -68,7 +68,7 @@ export default function Dashboard() {
 
   const stats: DashboardStat[] = [
     {
-      title: "Residuos Generados",
+      title: t("residuosGenerados"),
       value: "1,234 kg",
       change: "+12%",
       trend: "up",
@@ -76,7 +76,7 @@ export default function Dashboard() {
       color: "text-blue-600",
     },
     {
-      title: "Etiquetas Emitidas",
+      title: t("etiquetasEmitidas"),
       value: "156",
       change: "+8%",
       trend: "up", 
@@ -84,7 +84,7 @@ export default function Dashboard() {
       color: "text-green-600",
     },
     {
-      title: "Entregas Completadas",
+      title: t("entregasCompletadas"),
       value: "89",
       change: "+5%",
       trend: "up",
@@ -92,7 +92,7 @@ export default function Dashboard() {
       color: "text-purple-600",
     },
     {
-      title: "Incidencias Activas",
+      title: t("incidenciasActivas"),
       value: "3",
       change: "-2",
       trend: "down",
@@ -103,32 +103,32 @@ export default function Dashboard() {
 
   const quickActions: QuickAction[] = [
     {
-      title: "Registrar Residuo",
-      description: "Crear nuevo registro de residuo hospitalario",
+      title: t("registrarResiduo"),
+      description: t("crearRegistroResiduo"),
       href: "/residuos/nuevo",
       icon: Plus,
       color: "bg-blue-500 hover:bg-blue-600",
       roles: ["generador", "supervisor", "admin"],
     },
     {
-      title: "Generar Etiqueta",
-      description: "Crear etiqueta QR para residuo",
+      title: t("generarEtiqueta"),
+      description: t("crearEtiquetaQR"),
       href: "/etiquetas/generar",
       icon: QrCode,
       color: "bg-green-500 hover:bg-green-600",
       roles: ["generador", "supervisor", "admin"],
     },
     {
-      title: "Nueva Entrega",
-      description: "Programar entrega de residuos",
+      title: t("nuevaEntrega"),
+      description: t("programarEntrega"),
       href: "/entregas/nueva",
       icon: Truck,
       color: "bg-purple-500 hover:bg-purple-600",
       roles: ["supervisor", "transportista", "admin"],
     },
     {
-      title: "Ver Reportes",
-      description: "Consultar reportes de cumplimiento",
+      title: t("verReportes"),
+      description: t("consultarReportes"),
       href: "/reportes",
       icon: BarChart3,
       color: "bg-orange-500 hover:bg-orange-600",
@@ -138,68 +138,68 @@ export default function Dashboard() {
 
   const modules = [
     {
-      title: "Gestión de Residuos",
-      description: "Control completo del ciclo de vida de residuos hospitalarios",
+      title: t("gestionResiduos"),
+      description: t("cicloResiduos"),
       href: "/residuos",
       icon: Trash2,
-      features: ["Clasificación por categorías", "Seguimiento en tiempo real", "Historial completo"],
-      status: "Activo",
+      features: [t("clasificacionCategorias"), t("seguimientoTiempoReal"), t("historialCompleto")],
+      status: t("activo"),
     },
     {
-      title: "Sistema de Etiquetado",
-      description: "Generación de códigos QR para trazabilidad",
+      title: t("sistemaEtiquetado"),
+      description: t("generacionQR"),
       href: "/etiquetas",
       icon: QrCode,
-      features: ["Códigos QR únicos", "Información detallada", "Escaneo móvil"],
-      status: "Activo",
+      features: [t("codigosQRUnicos"), t("infoDetallada"), t("escaneoMovil")],
+      status: t("activo"),
     },
     {
-      title: "Control de Pesaje",
-      description: "Registro preciso de pesos y medidas",
+      title: t("controlPesaje"),
+      description: t("registroPesos"),
       href: "/pesaje",
       icon: Scale,
-      features: ["Pesaje automático", "Validación de datos", "Control de calidad"],
-      status: "Activo",
+      features: [t("pesajeAutomatico"), t("validacionDatos"), t("controlCalidad")],
+      status: t("activo"),
     },
     {
-      title: "Gestión de Entregas",
-      description: "Logística y transporte de residuos",
+      title: t("gestionEntregas"),
+      description: t("logisticaTransporte"),
       href: "/entregas",
       icon: Truck,
-      features: ["Programación de rutas", "Seguimiento GPS", "Confirmación digital"],
-      status: "Activo",
+      features: [t("programacionRutas"), t("seguimientoGPS"), t("confirmacionDigital")],
+      status: t("activo"),
     },
     {
-      title: "Sistema de Incidencias",
-      description: "Gestión de eventos y alertas",
+      title: t("sistemaIncidencias"),
+      description: t("gestionEventos"),
       href: "/incidencias",
       icon: AlertTriangle,
-      features: ["Alertas automáticas", "Clasificación por prioridad", "Seguimiento de resolución"],
-      status: "Activo",
+      features: [t("alertasAutomaticas"), t("clasificacionPrioridad"), t("seguimientoResolucion")],
+      status: t("activo"),
     },
     {
-      title: "Reportes y Cumplimiento",
-      description: "Análisis y reportes normativos",
+      title: t("reportesCumplimiento"),
+      description: t("analisisReportes"),
       href: "/reportes",
       icon: FileText,
-      features: ["Dashboards interactivos", "Exportación múltiple", "Cumplimiento normativo"],
-      status: "Activo",
+      features: [t("dashboardsInteractivos"), t("exportacionMultiple"), t("cumplimientoNormativo")],
+      status: t("activo"),
     },
     {
-      title: "Capacitaciones",
-      description: "Formación del personal",
+      title: t("capacitaciones"),
+      description: t("formacionPersonal"),
       href: "/capacitaciones",
       icon: BookOpen,
-      features: ["Cursos interactivos", "Certificaciones", "Seguimiento de progreso"],
-      status: "Activo",
+      features: [t("cursosInteractivos"), t("certificaciones"), t("seguimientoProgreso")],
+      status: t("activo"),
     },
     {
-      title: "Cumplimiento Normativo",
-      description: "Verificación de estándares ISO",
+      title: t("cumplimientoNormativo"),
+      description: t("verificacionISO"),
       href: "/cumplimiento",
       icon: Shield,
-      features: ["Auditorías automáticas", "Indicadores de cumplimiento", "Planes de mejora"],
-      status: "Activo",
+      features: [t("auditoriasAutomaticas"), t("indicadoresCumplimiento"), t("planesMejora")],
+      status: t("activo"),
     },
   ]
 
@@ -215,16 +215,16 @@ export default function Dashboard() {
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            ¡Bienvenido, {user?.nombre_completo}!
+            {t("welcome")}, {user?.nombre_completo}!
           </h1>
           <p className="text-muted-foreground">
-            Sistema de Gestión de Residuos Hospitalarios - Panel de Control
+            {t("sistemaGestionResiduos")}
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant="outline" className="text-green-600 border-green-600">
             <CheckCircle className="w-3 h-3 mr-1" />
-            Sistema Operativo
+            {t("sistemaOperativo")}
           </Badge>
           <Badge variant="outline" className="capitalize">
             {user?.rol?.replace("_", " ")}
@@ -263,10 +263,10 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            Acciones Rápidas
+            {t("accionesRapidas")}
           </CardTitle>
           <CardDescription>
-            Accesos directos a las funciones más utilizadas
+            {t("accesosDirectos")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -301,10 +301,10 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Módulos del Sistema
+            {t("modulosSistema")}
           </CardTitle>
           <CardDescription>
-            Resumen completo de todas las funcionalidades disponibles
+            {t("resumenFuncionalidades")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -360,27 +360,27 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Estado de Cumplimiento
+              {t("estadoCumplimiento")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Normativa ISO 14001</span>
+                <span>{t("normativaISO")}</span>
                 <span>95%</span>
               </div>
               <Progress value={95} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Gestión de Residuos</span>
+                <span>{t("gestionResiduos")}</span>
                 <span>88%</span>
               </div>
               <Progress value={88} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Capacitación Personal</span>
+                <span>{t("capacitacionPersonal")}</span>
                 <span>92%</span>
               </div>
               <Progress value={92} className="h-2" />
@@ -392,30 +392,30 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Actividad Reciente
+              {t("actividadReciente")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center space-x-3 text-sm">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-muted-foreground">Entrega completada - Lote #1234</span>
-                <span className="text-xs text-muted-foreground ml-auto">Hace 2h</span>
+                <span className="text-muted-foreground">{t("entregaCompletadaLote")}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{t("hace2h")}</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-muted-foreground">Nuevo residuo registrado - Cat. III</span>
-                <span className="text-xs text-muted-foreground ml-auto">Hace 4h</span>
+                <span className="text-muted-foreground">{t("nuevoResiduoRegistrado")}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{t("hace4h")}</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="text-muted-foreground">Incidencia reportada - Sala 301</span>
-                <span className="text-xs text-muted-foreground ml-auto">Hace 6h</span>
+                <span className="text-muted-foreground">{t("incidenciaReportadaSala")}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{t("hace6h")}</span>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-muted-foreground">Capacitación completada</span>
-                <span className="text-xs text-muted-foreground ml-auto">Hace 1d</span>
+                <span className="text-muted-foreground">{t("capacitacionCompletada")}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{t("hace1d")}</span>
               </div>
             </div>
           </CardContent>
