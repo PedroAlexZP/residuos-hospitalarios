@@ -92,15 +92,15 @@ export default function ResiduosPage() {
     return WASTE_TYPES.find((w) => w.value === tipo) || { label: tipo, color: "gray" }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const variants = {
+  const getEstadoBadge = (estado: string): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       generado: "secondary",
       etiquetado: "default",
       pesado: "outline",
       almacenado: "secondary",
       entregado: "default",
     }
-    return variants[estado as keyof typeof variants] || "secondary"
+    return variants[estado] ?? "secondary"
   }
 
   const filteredResiduos = residuos.filter((residuo) => {
@@ -339,7 +339,7 @@ export default function ResiduosPage() {
                                 </Link>
                               </DropdownMenuItem>
                               {user &&
-                                (user.id === residuo.usuario_id || ["supervisor", "admin"].includes(user.rol)) && (
+                                (["supervisor", "admin"].includes(user.rol)) && (
                                   <DropdownMenuItem asChild>
                                     <Link href={`/residuos/${residuo.id}/editar`}>
                                       <Edit className="mr-2 h-4 w-4" />

@@ -92,14 +92,14 @@ export default function IncidenciasPage() {
     return URGENCY_LEVELS.find((u) => u.value === urgencia) || { label: urgencia, color: "gray" }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const variants = {
+  const getEstadoBadge = (estado: string): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       abierta: "destructive",
       en_proceso: "default",
       resuelta: "secondary",
       cerrada: "outline",
     }
-    return variants[estado as keyof typeof variants] || "secondary"
+    return variants[estado] ?? "secondary"
   }
 
   const filteredIncidencias = incidencias.filter((incidencia) => {
@@ -339,7 +339,7 @@ export default function IncidenciasPage() {
                                 </Link>
                               </DropdownMenuItem>
                               {user &&
-                                (user.id === incidencia.usuario_id || ["supervisor", "admin"].includes(user.rol)) && (
+                                (["supervisor", "admin"].includes(user.rol)) && (
                                   <DropdownMenuItem asChild>
                                     <Link href={`/incidencias/${incidencia.id}/editar`}>
                                       <Edit className="mr-2 h-4 w-4" />

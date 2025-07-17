@@ -69,7 +69,7 @@ export default function LoginPage() {
       } else if ((error as unknown as { message?: string })?.message?.includes("Too many requests")) {
         errorMessage = "Demasiados intentos. Espera unos minutos antes de intentar de nuevo."
       } else if ((error as unknown as { message?: string })?.message) {
-        errorMessage = (error as unknown as { message?: string })?.message
+        errorMessage = (error as unknown as { message?: string })?.message ?? "Error al iniciar sesión"
       }
       
       setError(errorMessage)

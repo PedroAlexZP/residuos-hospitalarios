@@ -91,13 +91,13 @@ export default function ReportesPage() {
     return TIPOS_REPORTE.find((t) => t.value === tipo) || { label: tipo, description: "" }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const variants = {
+  const getEstadoBadge = (estado: string): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       generando: "secondary",
       completado: "default",
       error: "destructive",
     }
-    return variants[estado as keyof typeof variants] || "secondary"
+    return variants[estado] ?? "secondary"
   }
 
   const filteredReportes = reportes.filter((reporte) => {
