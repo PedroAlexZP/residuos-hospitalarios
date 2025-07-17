@@ -53,8 +53,14 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        Chevron: ({ className, ...props }) => {
+          // @ts-ignore orientation is left/right
+          // @ts-expect-error orientation is not in props type but is passed
+          const orientation = (props as any).orientation;
+          if (orientation === "left") return <ChevronLeft className="h-4 w-4" />;
+          if (orientation === "right") return <ChevronRight className="h-4 w-4" />;
+          return null;
+        },
       }}
     />
   )
