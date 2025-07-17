@@ -55,7 +55,6 @@ function Calendar({
       components={{
         Chevron: ({ className, ...props }) => {
           // @ts-ignore orientation is left/right
-          // @ts-expect-error orientation is not in props type but is passed
           const orientation = (props as any).orientation;
           if (orientation === "left") return <ChevronLeft className="h-4 w-4" />;
           // Por defecto, siempre retorna un icono válido
