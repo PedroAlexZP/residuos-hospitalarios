@@ -124,9 +124,9 @@ const ChartTooltipContent = React.forwardRef<
     const labelKey = props.labelKey;
     const color = props.color;
     const formatter = props.formatter;
-    const label = props.label;
-    const labelFormatter = props.labelFormatter;
-    const labelClassName = props.labelClassName;
+    const label = (props as any)["label"];
+    const labelFormatter = (props as any)["labelFormatter"];
+    const labelClassName = (props as any)["labelClassName"];
     const { config } = useChart();
 
     const tooltipLabel = React.useMemo(() => {
