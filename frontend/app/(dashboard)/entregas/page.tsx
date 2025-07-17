@@ -111,8 +111,8 @@ export default function EntregasPage() {
     }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const variants = {
+  const getEstadoBadge = (estado: string): { variant: "default" | "destructive" | "outline" | "secondary"; color: string } => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       pendiente: "secondary",
       confirmada: "default",
       tratada: "outline",
@@ -123,7 +123,7 @@ export default function EntregasPage() {
       tratada: "text-green-700 bg-green-50 border-green-200",
     }
     return {
-      variant: variants[estado as keyof typeof variants] || "secondary",
+      variant: variants[estado] ?? "secondary",
       color: colors[estado as keyof typeof colors],
     }
   }
@@ -338,7 +338,7 @@ export default function EntregasPage() {
                         </TableCell>
                         <TableCell className="font-medium">{pesoTotalEntrega.toFixed(2)} kg</TableCell>
                         <TableCell>
-                          <Badge variant={estadoBadge.variant} className={estadoBadge.color}>
+                          <Badge variant={estadoBadge.variant}>
                             {entrega.estado.charAt(0).toUpperCase() + entrega.estado.slice(1)}
                           </Badge>
                         </TableCell>

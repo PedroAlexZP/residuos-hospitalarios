@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -40,53 +40,8 @@ export default function GenerarEtiquetaPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("")
   const [generatedCode, setGeneratedCode] = useState<string>("")
 
-  useEffect(() => {
-    const loadResiduos = async () => {
-      try {
-        const user = await getCurrentUser()
-        if (!user) return
-
-        // Cargar residuos sin etiqueta
-        let query = supabase
-          .from("residuos")
-          .select(`
-            *,
-            usuario:users(nombre_completo, departamento),
-            etiquetas(id)
-          `)
-          .is("etiquetas.id", null)
-          .order("created_at", { ascending: false })
-
-        // Filtrar por usuario si no es supervisor o admin
-        if (!["supervisor", "admin"].includes(user.rol)) {
-          query = query.eq("usuario_id", user.id)
-        }
-
-        const { data, error } = await query
-
-        if (error) throw error
-        setResiduos(data || [])
-
-        // Si viene un residuo específico en la URL
-        const residuoParam = searchParams.get("residuo")
-        if (residuoParam && data?.find((r) => r.id === residuoParam)) {
-          setSelectedResiduo(residuoParam)
-        }
-      } catch (error) {
-        console.error("Error loading residuos:", error)
-      }
-    }
-
-    loadResiduos()
-  }, [searchParams])
-
-  useEffect(() => {
-    if (selectedResiduo && tipoEtiqueta) {
-      generatePreview()
-    }
-  }, [selectedResiduo, tipoEtiqueta, generatePreview])
-
-  const generatePreview = async () => {
+  // Usa useCallback para memoizar generatePreview y evitar el warning de dependencias en useEffect.
+  const generatePreview = useCallback(async () => {
     try {
       const residuo = residuos.find((r) => r.id === selectedResiduo)
       if (!residuo) return
@@ -120,7 +75,13 @@ export default function GenerarEtiquetaPage() {
     } catch (error) {
       console.error("Error generating preview:", error)
     }
-  }
+  }, [selectedResiduo, tipoEtiqueta, residuos])
+
+  useEffect(() => {
+    if (selectedResiduo && tipoEtiqueta) {
+      generatePreview()
+    }
+  }, [selectedResiduo, tipoEtiqueta, generatePreview])
 
   const handleGenerate = async () => {
     if (!selectedResiduo || !tipoEtiqueta) {

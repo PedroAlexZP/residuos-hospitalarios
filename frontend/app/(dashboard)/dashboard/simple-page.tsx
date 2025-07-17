@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react"
 import { signOut, getCurrentUser } from "@/lib/auth"
 
+interface User {
+  nombre_completo: string;
+  email: string;
+  rol: string;
+  departamento?: string;
+}
+
 export default function SimpleDashboard() {
-  const [user, setUser] = useState<unknown>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

@@ -88,7 +88,7 @@ export default function NuevaEntregaPage() {
           ubicacion: residuo.ubicacion,
           peso_real: residuo.pesajes?.[0]?.peso || residuo.cantidad,
           codigo_qr: residuo.etiquetas?.[0]?.codigo_qr || "",
-          usuario: residuo.usuario,
+          usuario: Array.isArray(residuo.usuario) ? residuo.usuario[0] : residuo.usuario,
         }))
 
         setResiduosPesados(residuosConPeso)
