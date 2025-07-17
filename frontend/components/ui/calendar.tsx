@@ -58,8 +58,8 @@ function Calendar({
           // @ts-expect-error orientation is not in props type but is passed
           const orientation = (props as any).orientation;
           if (orientation === "left") return <ChevronLeft className="h-4 w-4" />;
-          if (orientation === "right") return <ChevronRight className="h-4 w-4" />;
-          return null;
+          // Por defecto, siempre retorna un icono válido
+          return <ChevronRight className="h-4 w-4" />;
         },
       }}
     />
