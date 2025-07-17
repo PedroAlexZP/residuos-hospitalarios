@@ -114,21 +114,19 @@ const ChartTooltipContent = React.forwardRef<
     }
 >(
   (props, ref) => {
-    const {
-      active,
-      className,
-      indicator = "dot",
-      hideLabel = false,
-      hideIndicator = false,
-      label,
-      labelFormatter,
-      labelClassName,
-      formatter,
-      color,
-      nameKey,
-      labelKey,
-    } = props;
+    const active = props.active;
+    const className = props.className;
+    const indicator = props.indicator ?? "dot";
+    const hideLabel = props.hideLabel ?? false;
+    const hideIndicator = props.hideIndicator ?? false;
     const payload = props.payload ?? [];
+    const nameKey = props.nameKey;
+    const labelKey = props.labelKey;
+    const color = props.color;
+    const formatter = props.formatter;
+    const label = props.label;
+    const labelFormatter = props.labelFormatter;
+    const labelClassName = props.labelClassName;
     const { config } = useChart();
 
     const tooltipLabel = React.useMemo(() => {
