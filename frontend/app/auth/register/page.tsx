@@ -14,13 +14,15 @@ import { USER_ROLES, DEPARTMENTS } from "@/lib/constants"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from "@/components/theme-toggle"
 
+type UserRole = "generador" | "supervisor" | "transportista" | "gestor_externo" | "admin";
+
 interface FormData {
   nombre_completo: string
   email: string
-  rol: string
-  departamento: string
-  password: string
-  confirmPassword: string
+  rol: UserRole | "";
+  departamento: string;
+  password: string;
+  confirmPassword: string;
 }
 
 interface FormErrors {
@@ -97,10 +99,14 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
+      // Solo enviar rol si es válido
+      const userRoles: UserRole[] = ["generador", "supervisor", "transportista", "gestor_externo", "admin"];
+      const rolToSend = userRoles.includes(formData.rol as UserRole) ? formData.rol : undefined;
+
       await signUp(formData.email, formData.password, {
         nombre_completo: formData.nombre_completo,
         email: formData.email,
-        rol: formData.rol as unknown as string,
+        rol: rolToSend,
         departamento: formData.departamento || undefined,
       })
 
