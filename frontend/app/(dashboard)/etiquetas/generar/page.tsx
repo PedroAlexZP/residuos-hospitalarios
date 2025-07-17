@@ -84,7 +84,7 @@ export default function GenerarEtiquetaPage() {
     if (selectedResiduo && tipoEtiqueta) {
       generatePreview()
     }
-  }, [selectedResiduo, tipoEtiqueta])
+  }, [selectedResiduo, tipoEtiqueta, generatePreview])
 
   const generatePreview = async () => {
     try {

@@ -126,14 +126,14 @@ export default function RegisterPage() {
 
       let errorMessage = "No se pudo crear la cuenta"
 
-      if ((error as any).message?.includes("recursion")) {
+      if ((error as unknown as { message?: string })?.message?.includes("recursion")) {
         errorMessage = "Error del sistema. Por favor, contacta al administrador."
-      } else if ((error as any).message?.includes("rate limit")) {
+      } else if ((error as unknown as { message?: string })?.message?.includes("rate limit")) {
         errorMessage = "Demasiados intentos. Espera un momento antes de intentar de nuevo."
-      } else if ((error as any).message?.includes("duplicate")) {
+      } else if ((error as unknown as { message?: string })?.message?.includes("duplicate")) {
         errorMessage = "Ya existe un usuario con este correo electrónico."
-      } else if ((error as any).message) {
-        errorMessage = (error as any).message
+      } else if ((error as unknown as { message?: string })?.message) {
+        errorMessage = (error as unknown as { message?: string })?.message
       }
 
       toast({
