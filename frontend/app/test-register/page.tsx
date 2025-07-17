@@ -33,9 +33,9 @@ export default function TestRegister() {
 
       console.log("Test user created:", result)
       setSuccess(true)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating test user:", error)
-      setError(error.message || "Error al crear usuario")
+      setError((error as Error).message || "Error al crear usuario")
     } finally {
       setLoading(false)
     }

@@ -8,8 +8,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 import {
   Menu,
   Home,
@@ -21,17 +20,10 @@ import {
   FileText,
   BookOpen,
   Users,
-  Settings,
   LogOut,
-  ChevronDown,
   Sun,
   Moon,
   Languages,
-  Shield,
-  CheckSquare,
-  Plus,
-  BarChart3,
-  Activity,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useLanguage } from "@/hooks/use-language"
@@ -146,17 +138,13 @@ export function useIsDesktop() {
 }
 
 export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open?: boolean, onOpenChange?: (open: boolean) => void }) {
-  const { user, loading, signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const { t, language, setLanguage } = useLanguage()
   const [permissions, setPermissions] = useState<Permission[]>([])
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [showProfile, setShowProfile] = useState(false)
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const isDesktop = useIsDesktop()
-
-  // Estado para abrir/cerrar el drawer en móvil
-  const [openDrawer, setOpenDrawer] = useState(false)
 
   useEffect(() => {
     const loadPermissions = async () => {

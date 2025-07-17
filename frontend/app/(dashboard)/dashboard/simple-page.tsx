@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { signOut, getCurrentUser } from "@/lib/auth"
 
 export default function SimpleDashboard() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

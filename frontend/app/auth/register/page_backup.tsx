@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,7 +33,6 @@ interface FormErrors {
 }
 
 export default function RegisterPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -102,7 +100,7 @@ export default function RegisterPage() {
       await signUp(formData.email, formData.password, {
         nombre_completo: formData.nombre_completo,
         email: formData.email,
-        rol: formData.rol as any,
+        rol: formData.rol as unknown as string,
         departamento: formData.departamento || undefined,
       })
 
@@ -123,19 +121,19 @@ export default function RegisterPage() {
       setTimeout(() => {
         window.location.href = "/auth/login"
       }, 1500)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration error:", error)
 
       let errorMessage = "No se pudo crear la cuenta"
 
-      if (error.message?.includes("recursion")) {
+      if ((error as any).message?.includes("recursion")) {
         errorMessage = "Error del sistema. Por favor, contacta al administrador."
-      } else if (error.message?.includes("rate limit")) {
+      } else if ((error as any).message?.includes("rate limit")) {
         errorMessage = "Demasiados intentos. Espera un momento antes de intentar de nuevo."
-      } else if (error.message?.includes("duplicate")) {
+      } else if ((error as any).message?.includes("duplicate")) {
         errorMessage = "Ya existe un usuario con este correo electrónico."
-      } else if (error.message) {
-        errorMessage = error.message
+      } else if ((error as any).message) {
+        errorMessage = (error as any).message
       }
 
       toast({
@@ -383,14 +381,6 @@ export default function RegisterPage() {
                 <Link href="/auth/login" className="text-primary hover:underline underline-offset-4">
                   Inicia sesión aquí
                 </Link>
-              </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
               </div>
             </div>
           </form>

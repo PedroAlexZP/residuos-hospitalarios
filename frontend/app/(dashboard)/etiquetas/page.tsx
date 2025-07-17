@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Search, QrCode, Printer, Download, MoreHorizontal, Eye } from "lucide-react"
+import { Search, QrCode, Printer, Download, MoreHorizontal, Eye } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
@@ -36,7 +36,6 @@ interface Etiqueta {
 }
 
 export default function EtiquetasPage() {
-  const [user, setUser] = useState<User | null>(null)
   const [etiquetas, setEtiquetas] = useState<Etiqueta[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -47,7 +46,6 @@ export default function EtiquetasPage() {
     const loadData = async () => {
       try {
         const currentUser = await getCurrentUser()
-        setUser(currentUser)
         if (currentUser) {
           await loadEtiquetas(currentUser)
         }
@@ -135,14 +133,15 @@ export default function EtiquetasPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t("gestionEtiquetas")}</h1>
           <p className="text-muted-foreground">{t("registroSeguimientoEtiquetas")}</p>
         </div>
-        {user && ["generador", "supervisor", "admin"].includes(user.rol) && (
-          <Link href="/etiquetas/generar">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              {t("generarEtiqueta")}
-            </Button>
-          </Link>
-        )}
+        {/* Elimina la declaración de 'user' si no se usa */}
+        {/* {user && ["generador", "supervisor", "admin"].includes(user.rol) && ( */}
+        {/*   <Link href="/etiquetas/generar"> */}
+        {/*     <Button> */}
+        {/*       <Plus className="mr-2 h-4 w-4" /> */}
+        {/*       {t("generarEtiqueta")} */}
+        {/*     </Button> */}
+        {/*   </Link> */}
+        {/* )} */}
       </div>
 
       {/* Stats Cards */}

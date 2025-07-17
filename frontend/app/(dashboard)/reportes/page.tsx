@@ -19,7 +19,7 @@ interface Reporte {
   id: string
   tipo: string
   fecha_generacion: string
-  filtros_aplicados: any
+  filtros_aplicados: unknown
   archivo_url: string | null
   estado: string
   usuario: {
@@ -346,8 +346,8 @@ export default function ReportesPage() {
                           {format(new Date(reporte.fecha_generacion), "dd/MM/yyyy HH:mm", { locale: es })}
                         </TableCell>
                         <TableCell>
-                          {reporte.filtros_aplicados && Object.keys(reporte.filtros_aplicados).length > 0 ? (
-                            <Badge variant="outline">{Object.keys(reporte.filtros_aplicados).length} filtro(s)</Badge>
+                          {reporte.filtros_aplicados && Object.keys(reporte.filtros_aplicados as Record<string, unknown>).length > 0 ? (
+                            <Badge variant="outline">{Object.keys(reporte.filtros_aplicados as Record<string, unknown>).length} filtro(s)</Badge>
                           ) : (
                             <Badge variant="secondary">Sin filtros</Badge>
                           )}

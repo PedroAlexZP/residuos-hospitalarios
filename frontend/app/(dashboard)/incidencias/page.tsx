@@ -24,7 +24,7 @@ interface Incidencia {
   urgencia: string
   estado: string
   fecha: string
-  evidencias: any
+  evidencias: unknown
   usuario: {
     nombre_completo: string
     departamento: string

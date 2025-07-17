@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { useToast } from "@/hooks/use-toast"
 import QRCodeLib from "qrcode"
+import Image from "next/image"
 
 interface Residuo {
   id: string
@@ -323,7 +324,7 @@ export default function GenerarEtiquetaPage() {
                   {/* QR Code Preview */}
                   {tipoEtiqueta === "QR" && qrCodeUrl && (
                     <div className="flex flex-col items-center space-y-2">
-                      <img src={qrCodeUrl || "/placeholder.svg"} alt="QR Code" className="border rounded" />
+                      <Image src={qrCodeUrl} alt="QR Code" width={200} height={200} className="border rounded" />
                       <p className="text-sm text-muted-foreground font-mono">{generatedCode}</p>
                     </div>
                   )}

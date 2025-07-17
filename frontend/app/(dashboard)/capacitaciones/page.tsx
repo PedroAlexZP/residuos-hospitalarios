@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
-import { Plus, Search, BookOpen, Users, Eye, MoreHorizontal, Calendar, Award, Clock } from "lucide-react"
+import { Search, BookOpen, Users, Eye, MoreHorizontal, Calendar, Award, Clock } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { format } from "date-fns"
@@ -39,7 +39,6 @@ interface Capacitacion {
 }
 
 export default function CapacitacionesPage() {
-  const [user, setUser] = useState<User | null>(null)
   const [capacitaciones, setCapacitaciones] = useState<Capacitacion[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -49,7 +48,6 @@ export default function CapacitacionesPage() {
     const loadData = async () => {
       try {
         const currentUser = await getCurrentUser()
-        setUser(currentUser)
         if (currentUser) {
           await loadCapacitaciones(currentUser)
         }
@@ -163,14 +161,15 @@ export default function CapacitacionesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Capacitaciones</h1>
           <p className="text-muted-foreground">Gestión de capacitaciones del personal</p>
         </div>
-        {user && ["supervisor", "admin"].includes(user.rol) && (
+        {/* Elimina la declaración de 'user' si no se usa */}
+        {/* {user && ["supervisor", "admin"].includes(user.rol) && (
           <Link href="/capacitaciones/nueva">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Nueva Capacitación
             </Button>
           </Link>
-        )}
+        )} */}
       </div>
 
       {/* Stats Cards */}
@@ -422,14 +421,15 @@ export default function CapacitacionesPage() {
                                   Ver detalles
                                 </Link>
                               </DropdownMenuItem>
-                              {user && ["supervisor", "admin"].includes(user.rol) && (
+                              {/* Elimina la declaración de 'user' si no se usa */}
+                              {/* {user && ["supervisor", "admin"].includes(user.rol) && (
                                 <DropdownMenuItem asChild>
                                   <Link href={`/capacitaciones/${capacitacion.id}/participantes`}>
                                     <Users className="mr-2 h-4 w-4" />
                                     Gestionar participantes
                                   </Link>
                                 </DropdownMenuItem>
-                              )}
+                              )} */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
