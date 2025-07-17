@@ -148,7 +148,7 @@ export default function RegisterPage() {
       } else if ((error as unknown as { message?: string })?.message?.includes("duplicate")) {
         errorMessage = "Ya existe un usuario con este correo electrónico."
       } else if ((error as unknown as { message?: string })?.message) {
-        errorMessage = (error as unknown as { message?: string })?.message
+        errorMessage = (error as unknown as { message?: string })?.message ?? "No se pudo crear la cuenta"
       }
 
       toast({
