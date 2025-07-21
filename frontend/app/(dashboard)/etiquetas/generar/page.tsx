@@ -212,7 +212,7 @@ export default function GenerarEtiquetaPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {residuos.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-data" disabled>
                         No hay residuos disponibles
                       </SelectItem>
                     ) : (

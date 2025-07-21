@@ -49,6 +49,14 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   roles: string[]
   module?: string
+  group?: string
+  isSubItem?: boolean
+}
+
+interface NavGroup {
+  title: string
+  translationKey: string
+  items: NavItem[]
 }
 
 const navItems: NavItem[] = [
@@ -58,6 +66,7 @@ const navItems: NavItem[] = [
     href: "/dashboard",
     icon: Home,
     roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
+    group: "main"
   },
   {
     title: "Residuos",
@@ -66,6 +75,17 @@ const navItems: NavItem[] = [
     icon: Trash2,
     roles: ["generador", "supervisor", "admin"],
     module: "residuos",
+    group: "operations"
+  },
+  {
+    title: "Nuevo Residuo",
+    translationKey: "nuevoResiduo",
+    href: "/residuos/nuevo",
+    icon: Plus,
+    roles: ["generador", "supervisor", "admin"],
+    module: "residuos",
+    group: "operations",
+    isSubItem: true
   },
   {
     title: "Etiquetas",
@@ -74,6 +94,17 @@ const navItems: NavItem[] = [
     icon: QrCode,
     roles: ["generador", "supervisor", "admin"],
     module: "etiquetas",
+    group: "operations"
+  },
+  {
+    title: "Generar Etiqueta",
+    translationKey: "generarEtiqueta",
+    href: "/etiquetas/generar",
+    icon: Plus,
+    roles: ["generador", "supervisor", "admin"],
+    module: "etiquetas",
+    group: "operations",
+    isSubItem: true
   },
   {
     title: "Pesaje",
@@ -82,6 +113,7 @@ const navItems: NavItem[] = [
     icon: Scale,
     roles: ["supervisor", "transportista", "admin"],
     module: "pesajes",
+    group: "operations"
   },
   {
     title: "Entregas",
@@ -90,6 +122,17 @@ const navItems: NavItem[] = [
     icon: Truck,
     roles: ["supervisor", "transportista", "gestor_externo", "admin"],
     module: "entregas",
+    group: "logistics"
+  },
+  {
+    title: "Nueva Entrega",
+    translationKey: "nuevaEntrega",
+    href: "/entregas/nueva",
+    icon: Plus,
+    roles: ["supervisor", "transportista", "admin"],
+    module: "entregas",
+    group: "logistics",
+    isSubItem: true
   },
   {
     title: "Incidencias",
@@ -98,22 +141,25 @@ const navItems: NavItem[] = [
     icon: AlertTriangle,
     roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
     module: "incidencias",
+    group: "management"
   },
   {
     title: "Reportes",
     translationKey: "reportes",
     href: "/reportes",
-    icon: FileText,
+    icon: BarChart3,
     roles: ["supervisor", "gestor_externo", "admin"],
     module: "reportes",
+    group: "management"
   },
   {
     title: "Cumplimiento",
     translationKey: "cumplimiento", 
     href: "/cumplimiento",
-    icon: FileText,
+    icon: Shield,
     roles: ["supervisor", "gestor_externo", "admin"],
     module: "cumplimiento",
+    group: "management"
   },
   {
     title: "Capacitaciones",
@@ -122,6 +168,7 @@ const navItems: NavItem[] = [
     icon: BookOpen,
     roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
     module: "capacitaciones",
+    group: "training"
   },
   {
     title: "Usuarios",
@@ -130,6 +177,7 @@ const navItems: NavItem[] = [
     icon: Users,
     roles: ["admin"],
     module: "usuarios",
+    group: "admin"
   },
 ]
 
@@ -182,6 +230,16 @@ export function Sidebar({ className }: SidebarProps) {
 
   const filteredNavItems = navItems.filter(canAccessItem)
 
+  // Agrupar elementos por categoría
+  const groupedItems = filteredNavItems.reduce((groups, item) => {
+    const group = item.group || 'other'
+    if (!groups[group]) {
+      groups[group] = []
+    }
+    groups[group].push(item)
+    return groups
+  }, {} as Record<string, NavItem[]>)
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -201,8 +259,9 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
-        <nav className="space-y-2">
-          {filteredNavItems.map((item) => {
+        <nav className="space-y-1">
+          {/* Dashboard siempre al inicio */}
+          {groupedItems.main?.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
 
@@ -218,6 +277,174 @@ export function Sidebar({ className }: SidebarProps) {
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                </Button>
+              </Link>
+            )
+          })}
+          
+          {/* Separador */}
+          {groupedItems.main && !isCollapsed && (
+            <div className="my-4 border-t border-border/50" />
+          )}
+
+          {/* Operaciones */}
+          {groupedItems.operations && !isCollapsed && (
+            <div className="px-2 py-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Operaciones
+              </h3>
+            </div>
+          )}
+          {groupedItems.operations?.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
+                    isCollapsed && "px-2",
+                    item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]",
+                    item.isSubItem && "h-9 text-sm"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                </Button>
+              </Link>
+            )
+          })}
+
+          {/* Logística */}
+          {groupedItems.logistics && !isCollapsed && (
+            <div className="px-2 py-2 mt-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Logística
+              </h3>
+            </div>
+          )}
+          {groupedItems.logistics?.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
+                    isCollapsed && "px-2",
+                    item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]",
+                    item.isSubItem && "h-9 text-sm"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                </Button>
+              </Link>
+            )
+          })}
+
+          {/* Gestión */}
+          {groupedItems.management && !isCollapsed && (
+            <div className="px-2 py-2 mt-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Gestión
+              </h3>
+            </div>
+          )}
+          {groupedItems.management?.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
+                    isCollapsed && "px-2",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                </Button>
+              </Link>
+            )
+          })}
+
+          {/* Capacitación */}
+          {groupedItems.training?.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
+                    isCollapsed && "px-2",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                </Button>
+              </Link>
+            )
+          })}
+
+          {/* Administración */}
+          {groupedItems.admin && !isCollapsed && (
+            <div className="px-2 py-2 mt-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Administración
+              </h3>
+            </div>
+          )}
+          {groupedItems.admin?.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
+                    isCollapsed && "px-2",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                </Button>
+              </Link>
+            )
+          })}
+
+          {/* Cuando está colapsado, mostrar todos los elementos sin grupos */}
+          {isCollapsed && filteredNavItems.slice(1).map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10 sidebar-button",
+                    isActive && "bg-secondary font-medium shadow-sm",
+                    "px-2",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
                 </Button>
               </Link>
             )
