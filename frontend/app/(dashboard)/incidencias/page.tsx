@@ -15,6 +15,7 @@ import { getCurrentUser, type User } from "@/lib/auth"
 import { URGENCY_LEVELS } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Incidencia {
   id: string
@@ -23,7 +24,7 @@ interface Incidencia {
   urgencia: string
   estado: string
   fecha: string
-  evidencias: any
+  evidencias: unknown
   usuario: {
     nombre_completo: string
     departamento: string
@@ -42,6 +43,7 @@ export default function IncidenciasPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterUrgencia, setFilterUrgencia] = useState<string>("all")
   const [filterEstado, setFilterEstado] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
@@ -90,14 +92,14 @@ export default function IncidenciasPage() {
     return URGENCY_LEVELS.find((u) => u.value === urgencia) || { label: urgencia, color: "gray" }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const variants = {
+  const getEstadoBadge = (estado: string): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       abierta: "destructive",
       en_proceso: "default",
       resuelta: "secondary",
       cerrada: "outline",
     }
-    return variants[estado as keyof typeof variants] || "secondary"
+    return variants[estado] ?? "secondary"
   }
 
   const filteredIncidencias = incidencias.filter((incidencia) => {
@@ -133,22 +135,24 @@ export default function IncidenciasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Incidencias</h1>
-          <p className="text-muted-foreground">Registro y seguimiento de incidencias del sistema</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionIncidencias")}</h1>
+          <p className="text-muted-foreground">{t("registroSeguimientoIncidencias")}</p>
         </div>
-        <Link href="/incidencias/nueva">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Reportar Incidencia
-          </Button>
-        </Link>
+        {user && ["generador", "supervisor", "admin"].includes(user.rol) && (
+          <Link href="/incidencias/nueva">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("nuevaIncidencia")}
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Incidencias</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalIncidencias")}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -331,11 +335,11 @@ export default function IncidenciasPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/incidencias/${incidencia.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalles
+                                  {t("verDetalles")}
                                 </Link>
                               </DropdownMenuItem>
                               {user &&
-                                (user.id === incidencia.usuario_id || ["supervisor", "admin"].includes(user.rol)) && (
+                                (["supervisor", "admin"].includes(user.rol)) && (
                                   <DropdownMenuItem asChild>
                                     <Link href={`/incidencias/${incidencia.id}/editar`}>
                                       <Edit className="mr-2 h-4 w-4" />

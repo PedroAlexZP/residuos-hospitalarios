@@ -22,6 +22,7 @@ export async function middleware(req: NextRequest) {
       } else {
         return NextResponse.redirect(new URL("/auth/login", req.url))
       }
+      // No más código después de return
     }
 
     // Si no hay sesión y no es ruta pública, redirigir a login
@@ -30,11 +31,13 @@ export async function middleware(req: NextRequest) {
       // Add return URL for better UX
       loginUrl.searchParams.set("returnUrl", req.nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
+      // No más código después de return
     }
 
     // Si hay sesión y está en ruta de auth, redirigir al dashboard
     if (session && isPublicRoute) {
       return NextResponse.redirect(new URL("/dashboard", req.url))
+      // No más código después de return
     }
 
     // Basic role checking from user metadata
@@ -55,41 +58,6 @@ export async function middleware(req: NextRequest) {
         !["supervisor", "admin"].includes(userRole)
       ) {
         return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
-      }
-    }
-
-    return res
-  } catch (error) {
-    console.error("Middleware error:", error)
-    return NextResponse.redirect(new URL("/auth/login", req.url))
-  }
-}
-
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|placeholder|.*\\.png|.*\\.svg|.*\\.jpg).*)"],
-}
-
-          const userRole = user.rol
-          const pathname = req.nextUrl.pathname
-
-          // Rutas restringidas por rol
-          const adminOnlyRoutes = ["/admin", "/usuarios", "/permisos"]
-          const supervisorRoutes = ["/reportes", "/cumplimiento"]
-
-          if (adminOnlyRoutes.some((route) => pathname.startsWith(route)) && userRole !== "admin") {
-            return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
-          }
-
-          if (
-            supervisorRoutes.some((route) => pathname.startsWith(route)) &&
-            !["supervisor", "admin"].includes(userRole)
-          ) {
-            return NextResponse.redirect(new URL("/dashboard?error=insufficient_permissions", req.url))
-          }
-        }
-      } catch (error) {
-        console.error("Error checking user permissions in middleware:", error)
-        // Continue without blocking if there's an error
       }
     }
 

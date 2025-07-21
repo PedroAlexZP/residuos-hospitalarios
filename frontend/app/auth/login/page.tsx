@@ -2,14 +2,13 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { signIn } from "@/lib/auth"
 // import { ThemeToggle } from "@/components/theme-toggle" // Temporarily disabled
 
 export default function LoginPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -58,19 +57,19 @@ export default function LoginPage() {
       
       // Try immediate redirect
       window.location.replace(returnUrl)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error)
       
       // More specific error messages
       let errorMessage = "Error al iniciar sesión"
-      if (error.message?.includes("Invalid login credentials")) {
+      if ((error as unknown as { message?: string })?.message?.includes("Invalid login credentials")) {
         errorMessage = "Credenciales inválidas. Verifica tu correo y contraseña."
-      } else if (error.message?.includes("Email not confirmed")) {
+      } else if ((error as unknown as { message?: string })?.message?.includes("Email not confirmed")) {
         errorMessage = "Por favor, confirma tu correo electrónico antes de iniciar sesión."
-      } else if (error.message?.includes("Too many requests")) {
+      } else if ((error as unknown as { message?: string })?.message?.includes("Too many requests")) {
         errorMessage = "Demasiados intentos. Espera unos minutos antes de intentar de nuevo."
-      } else if (error.message) {
-        errorMessage = error.message
+      } else if ((error as unknown as { message?: string })?.message) {
+        errorMessage = (error as unknown as { message?: string })?.message ?? "Error al iniciar sesión"
       }
       
       setError(errorMessage)
@@ -81,6 +80,7 @@ export default function LoginPage() {
 
   if (!mounted) {
     return null
+    // No más código después de return
   }
 
   return (

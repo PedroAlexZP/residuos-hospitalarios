@@ -21,8 +21,8 @@ export default function ResetPasswordPage() {
     try {
       await resetPassword(email)
       setSuccess(true)
-    } catch (error: any) {
-      setError(error.message || "Error al enviar el correo de restablecimiento")
+    } catch (error: unknown) {
+      setError((error as Error).message || "Error al enviar el correo de restablecimiento")
     } finally {
       setLoading(false)
     }

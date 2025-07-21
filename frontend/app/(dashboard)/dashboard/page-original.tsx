@@ -8,6 +8,7 @@ import { Trash2, QrCode, Scale, Truck, AlertTriangle, TrendingUp, Calendar } fro
 import { supabase } from "@/lib/supabase"
 import type { User } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
+import Link from "next/link"
 
 interface DashboardStats {
   totalResiduos: number
@@ -46,7 +47,6 @@ export default function DashboardPage() {
   const loadStatsData = async (user: User) => {
     try {
       const today = new Date().toISOString().split("T")[0]
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
       // Consultas paralelas para obtener estadísticas
       const [residuosTotal, residuosHoy, etiquetas, pesajes, entregas, incidencias] = await Promise.all([
@@ -261,49 +261,49 @@ export default function DashboardPage() {
             <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
               {user.rol === "generador" && (
                 <>
-                  <a
+                  <Link
                     href="/residuos/nuevo"
                     className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                     <span className="text-sm">Registrar Residuo</span>
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/etiquetas/generar"
                     className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted transition-colors"
                   >
                     <QrCode className="h-4 w-4" />
                     <span className="text-sm">Generar Etiqueta</span>
-                  </a>
+                  </Link>
                 </>
               )}
 
               {["supervisor", "admin"].includes(user.rol) && (
                 <>
-                  <a
+                  <Link
                     href="/reportes"
                     className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted transition-colors"
                   >
                     <TrendingUp className="h-4 w-4" />
                     <span className="text-sm">Ver Reportes</span>
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/cumplimiento"
                     className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted transition-colors"
                   >
                     <Calendar className="h-4 w-4" />
                     <span className="text-sm">Panel Cumplimiento</span>
-                  </a>
+                  </Link>
                 </>
               )}
 
-              <a
+              <Link
                 href="/incidencias/nueva"
                 className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted transition-colors"
               >
                 <AlertTriangle className="h-4 w-4" />
                 <span className="text-sm">Reportar Incidencia</span>
-              </a>
+              </Link>
             </div>
           </CardContent>
         </Card>

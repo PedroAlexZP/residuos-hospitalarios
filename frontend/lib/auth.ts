@@ -26,20 +26,33 @@ export const signUp = async (email: string, password: string, userData: Omit<Use
 
     if (error) throw error
 
+    // Crear perfil en public.users si el usuario fue creado
+    if (data.user) {
+      const { error: userError } = await supabase.from('users').insert({
+        id: data.user.id,
+        nombre_completo: userData.nombre_completo,
+        email: userData.email,
+        rol: userData.rol,
+        departamento: userData.departamento,
+        activo: true
+      })
+      if (userError) throw userError
+    }
+
     return data
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("SignUp error:", error)
 
     // Handle specific errors
-    if (error.message?.includes("rate limit")) {
+    if (error instanceof Error && error.message?.includes("rate limit")) {
       throw new Error("Demasiados intentos de registro. Espera un momento antes de intentar de nuevo.")
     }
 
-    if (error.message?.includes("User already registered")) {
+    if (error instanceof Error && error.message?.includes("User already registered")) {
       throw new Error("Ya existe un usuario con este correo electrónico.")
     }
 
-    throw new Error(error.message || "Error al crear la cuenta")
+    throw new Error(error instanceof Error ? error.message : "Error al crear la cuenta")
   }
 }
 
@@ -80,7 +93,7 @@ export const signIn = async (email: string, password: string) => {
     }
 
     return data
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("SignIn error:", error)
     throw error
   }

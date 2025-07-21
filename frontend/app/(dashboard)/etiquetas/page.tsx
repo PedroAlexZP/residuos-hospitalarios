@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Search, QrCode, Printer, Download, MoreHorizontal, Eye } from "lucide-react"
+import { Search, QrCode, Printer, Download, MoreHorizontal, Eye } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useLanguage } from "@/hooks/use-language"
 
 interface Etiqueta {
   id: string
@@ -35,17 +36,16 @@ interface Etiqueta {
 }
 
 export default function EtiquetasPage() {
-  const [user, setUser] = useState<User | null>(null)
   const [etiquetas, setEtiquetas] = useState<Etiqueta[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterTipo, setFilterTipo] = useState<string>("all")
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const currentUser = await getCurrentUser()
-        setUser(currentUser)
         if (currentUser) {
           await loadEtiquetas(currentUser)
         }
@@ -130,24 +130,25 @@ export default function EtiquetasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Etiquetas</h1>
-          <p className="text-muted-foreground">Códigos QR y de barras para trazabilidad de residuos</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("gestionEtiquetas")}</h1>
+          <p className="text-muted-foreground">{t("registroSeguimientoEtiquetas")}</p>
         </div>
-        {user && ["generador", "supervisor", "admin"].includes(user.rol) && (
-          <Link href="/etiquetas/generar">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Generar Etiqueta
-            </Button>
-          </Link>
-        )}
+        {/* Elimina la declaración de 'user' si no se usa */}
+        {/* {user && ["generador", "supervisor", "admin"].includes(user.rol) && ( */}
+        {/*   <Link href="/etiquetas/generar"> */}
+        {/*     <Button> */}
+        {/*       <Plus className="mr-2 h-4 w-4" /> */}
+        {/*       {t("generarEtiqueta")} */}
+        {/*     </Button> */}
+        {/*   </Link> */}
+        {/* )} */}
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Etiquetas</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalEtiquetas")}</CardTitle>
             <QrCode className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -313,7 +314,7 @@ export default function EtiquetasPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/etiquetas/${etiqueta.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalles
+                                  {t("verDetalles")}
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handlePrint(etiqueta.id)}>

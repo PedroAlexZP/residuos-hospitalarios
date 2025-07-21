@@ -13,7 +13,6 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  ...props
 }: CalendarProps) {
   return (
     <DayPicker
@@ -54,10 +53,14 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        Chevron: ({ className, ...props }) => {
+          // @ts-ignore orientation is left/right
+          const orientation = (props as any).orientation;
+          if (orientation === "left") return <ChevronLeft className="h-4 w-4" />;
+          // Por defecto, siempre retorna un icono válido
+          return <ChevronRight className="h-4 w-4" />;
+        },
       }}
-      {...props}
     />
   )
 }

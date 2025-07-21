@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, FileText, Users, Scale } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 
 interface CumplimientoData {
   residuosGenerados: number
@@ -22,7 +22,6 @@ interface CumplimientoData {
 }
 
 export default function CumplimientoPage() {
-  const [user, setUser] = useState<User | null>(null)
   const [data, setData] = useState<CumplimientoData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -30,7 +29,6 @@ export default function CumplimientoPage() {
     const loadData = async () => {
       try {
         const currentUser = await getCurrentUser()
-        setUser(currentUser)
         if (currentUser) {
           await loadCumplimientoData()
         }
@@ -74,9 +72,9 @@ export default function CumplimientoPage() {
 
       const pesajesRealizados = pesajes.length
       const diferenciasAltas = pesajes.filter((p) => {
-        if (!p.residuo) return false
-        const diferencia = Math.abs(p.peso - p.residuo.cantidad)
-        return (diferencia / p.residuo.cantidad) * 100 > 10
+        if (!p.residuo || !Array.isArray(p.residuo) || !p.residuo[0]) return false
+        const diferencia = Math.abs(p.peso - p.residuo[0].cantidad)
+        return (diferencia / p.residuo[0].cantidad) * 100 > 10
       }).length
 
       const entregasPendientes = entregas.filter((e) => e.estado === "pendiente").length

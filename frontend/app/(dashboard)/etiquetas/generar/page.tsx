@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { useToast } from "@/hooks/use-toast"
 import QRCodeLib from "qrcode"
+import Image from "next/image"
 
 interface Residuo {
   id: string
@@ -39,53 +40,8 @@ export default function GenerarEtiquetaPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("")
   const [generatedCode, setGeneratedCode] = useState<string>("")
 
-  useEffect(() => {
-    const loadResiduos = async () => {
-      try {
-        const user = await getCurrentUser()
-        if (!user) return
-
-        // Cargar residuos sin etiqueta
-        let query = supabase
-          .from("residuos")
-          .select(`
-            *,
-            usuario:users(nombre_completo, departamento),
-            etiquetas(id)
-          `)
-          .is("etiquetas.id", null)
-          .order("created_at", { ascending: false })
-
-        // Filtrar por usuario si no es supervisor o admin
-        if (!["supervisor", "admin"].includes(user.rol)) {
-          query = query.eq("usuario_id", user.id)
-        }
-
-        const { data, error } = await query
-
-        if (error) throw error
-        setResiduos(data || [])
-
-        // Si viene un residuo específico en la URL
-        const residuoParam = searchParams.get("residuo")
-        if (residuoParam && data?.find((r) => r.id === residuoParam)) {
-          setSelectedResiduo(residuoParam)
-        }
-      } catch (error) {
-        console.error("Error loading residuos:", error)
-      }
-    }
-
-    loadResiduos()
-  }, [searchParams])
-
-  useEffect(() => {
-    if (selectedResiduo && tipoEtiqueta) {
-      generatePreview()
-    }
-  }, [selectedResiduo, tipoEtiqueta])
-
-  const generatePreview = async () => {
+  // Usa useCallback para memoizar generatePreview y evitar el warning de dependencias en useEffect.
+  const generatePreview = useCallback(async () => {
     try {
       const residuo = residuos.find((r) => r.id === selectedResiduo)
       if (!residuo) return
@@ -119,7 +75,13 @@ export default function GenerarEtiquetaPage() {
     } catch (error) {
       console.error("Error generating preview:", error)
     }
-  }
+  }, [selectedResiduo, tipoEtiqueta, residuos])
+
+  useEffect(() => {
+    if (selectedResiduo && tipoEtiqueta) {
+      generatePreview()
+    }
+  }, [selectedResiduo, tipoEtiqueta, generatePreview])
 
   const handleGenerate = async () => {
     if (!selectedResiduo || !tipoEtiqueta) {
@@ -212,9 +174,13 @@ export default function GenerarEtiquetaPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {residuos.length === 0 ? (
+<<<<<<< HEAD
                       <SelectItem value="no-data" disabled>
                         No hay residuos disponibles
                       </SelectItem>
+=======
+                      <div className="px-3 py-2 text-muted-foreground text-sm select-none">No hay residuos disponibles</div>
+>>>>>>> 84b44f69756496e2905b626b93b1d4aa7adc8492
                     ) : (
                       residuos.map((residuo) => {
                         const type = WASTE_TYPES.find((w) => w.value === residuo.tipo)
@@ -325,7 +291,7 @@ export default function GenerarEtiquetaPage() {
                   {/* QR Code Preview */}
                   {tipoEtiqueta === "QR" && qrCodeUrl && (
                     <div className="flex flex-col items-center space-y-2">
-                      <img src={qrCodeUrl || "/placeholder.svg"} alt="QR Code" className="border rounded" />
+                      <Image src={qrCodeUrl} alt="QR Code" width={200} height={200} className="border rounded" />
                       <p className="text-sm text-muted-foreground font-mono">{generatedCode}</p>
                     </div>
                   )}

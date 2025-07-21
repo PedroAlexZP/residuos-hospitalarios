@@ -22,6 +22,7 @@ export async function middleware(req: NextRequest) {
       } else {
         return NextResponse.redirect(new URL("/auth/login", req.url))
       }
+      // No más código después de return
     }
 
     // Si no hay sesión y no es ruta pública, redirigir a login
@@ -30,11 +31,13 @@ export async function middleware(req: NextRequest) {
       // Add return URL for better UX
       loginUrl.searchParams.set("returnUrl", req.nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
+      // No más código después de return
     }
 
     // Si hay sesión y está en ruta de auth, redirigir al dashboard
     if (session && isPublicRoute) {
       return NextResponse.redirect(new URL("/dashboard", req.url))
+      // No más código después de return
     }
 
     // Basic role checking from user metadata
