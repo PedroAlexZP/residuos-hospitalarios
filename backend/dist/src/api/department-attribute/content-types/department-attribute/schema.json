@@ -1,0 +1,34 @@
+{
+    "kind": "collectionType",
+    "collectionName": "department_attributes",
+    "info": {
+        "singularName": "department-attribute",
+        "pluralName": "department-attributes",
+        "displayName": "Department"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "name": {
+            "type": "string",
+            "required": true
+        },
+        "location": {
+            "type": "text"
+        },
+        "medical_wastes": {
+            "type": "relation",
+            "relation": "oneToMany",
+            "target": "api::medical-waste.medical-waste",
+            "mappedBy": "department"
+        },
+        "waste_audits": {
+            "type": "relation",
+            "relation": "oneToMany",
+            "target": "api::waste-audit.waste-audit",
+            "mappedBy": "department"
+        }
+    }
+}

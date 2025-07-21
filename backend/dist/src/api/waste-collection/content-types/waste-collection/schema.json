@@ -1,0 +1,39 @@
+{
+    "kind": "collectionType",
+    "collectionName": "waste_collections",
+    "info": {
+        "singularName": "waste-collection",
+        "pluralName": "waste-collections",
+        "displayName": "WasteCollection"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "collection_date": {
+            "type": "date",
+            "required": true
+        },
+        "collected_by": {
+            "type": "string",
+            "required": true
+        },
+        "quantity": {
+            "type": "integer",
+            "required": true
+        },
+        "medical_wastes": {
+            "type": "relation",
+            "relation": "manyToMany",
+            "target": "api::medical-waste.medical-waste",
+            "inversedBy": "waste_collections"
+        },
+        "waste_disposal": {
+            "type": "relation",
+            "relation": "oneToOne",
+            "target": "api::waste-disposal.waste-disposal",
+            "mappedBy": "collection"
+        }
+    }
+}
