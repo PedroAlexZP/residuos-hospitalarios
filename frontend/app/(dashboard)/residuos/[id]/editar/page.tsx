@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/hooks/use-language"
+import { supabase } from "@/lib/supabase"
+import { getCurrentUser } from "@/lib/auth"
 
 const wasteTypes = [
   { value: "biologico", labelKey: "Biológico" },
@@ -29,30 +31,48 @@ export default function EditarResiduoPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Simular fetch de datos
-    setTimeout(() => {
-      setForm({
-        tipo: "quimico",
-        cantidad: "10",
-        ubicacion: "Sala 101",
-      });
-    }, 500);
-  }, [id]);
+    const fetchResiduo = async () => {
+      const { data, error } = await supabase
+        .from("residuos")
+        .select("*")
+        .eq("id", id)
+        .single()
+      if (data) {
+        setForm({
+          tipo: data.tipo,
+          cantidad: String(data.cantidad),
+          ubicacion: data.ubicacion,
+        })
+      }
+    }
+    fetchResiduo()
+  }, [id])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // Aquí iría la lógica para actualizar el residuo en Supabase
-    setTimeout(() => {
-      setLoading(false);
-      alert(t("Residuo actualizado correctamente!"));
-      router.push("/residuos");
-    }, 1000);
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    const user = await getCurrentUser()
+    const { error } = await supabase
+      .from("residuos")
+      .update({
+        tipo: form.tipo,
+        cantidad: Number.parseFloat(form.cantidad),
+        ubicacion: form.ubicacion,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+    setLoading(false)
+    if (!error) {
+      alert(t("Residuo actualizado correctamente!"))
+      router.push("/residuos")
+    } else {
+      alert("Error al actualizar residuo")
+    }
+  }
 
   return (
     <div className="p-6 max-w-xl mx-auto">

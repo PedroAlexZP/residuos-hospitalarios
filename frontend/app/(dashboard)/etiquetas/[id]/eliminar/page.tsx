@@ -2,18 +2,26 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase"
 
 export default function EliminarEtiquetaPage() {
   const params = useParams();
   const router = useRouter();
   const { id } = params;
 
-  // Aquí deberías agregar la lógica para eliminar la etiqueta
-  const handleDelete = () => {
-    // Lógica para eliminar la etiqueta
-    alert(`Etiqueta con ID ${id} eliminada (simulado)`);
-    router.push("/etiquetas");
-  };
+  // Lógica real para eliminar la etiqueta
+  const handleDelete = async () => {
+    const { error } = await supabase
+      .from("etiquetas")
+      .delete()
+      .eq("id", id)
+    if (!error) {
+      alert(`Etiqueta eliminada correctamente`)
+      router.push("/etiquetas")
+    } else {
+      alert("Error al eliminar etiqueta")
+    }
+  }
 
   return (
     <div className="p-6">

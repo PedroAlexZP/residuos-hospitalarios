@@ -2,6 +2,8 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase"
+import { getCurrentUser } from "@/lib/auth"
 
 export default function EliminarResiduoPage() {
   const params = useParams();
@@ -9,11 +11,19 @@ export default function EliminarResiduoPage() {
   const { id } = params;
 
   // Aquí deberías agregar la lógica para eliminar el residuo
-  const handleDelete = () => {
-    // Lógica para eliminar el residuo
-    alert(`Residuo con ID ${id} eliminado (simulado)`);
-    router.push("/residuos");
-  };
+  const handleDelete = async () => {
+    await getCurrentUser() // Si necesitas validar usuario, si no, puedes quitar esta línea
+    const { error } = await supabase
+      .from("residuos")
+      .delete()
+      .eq("id", id)
+    if (!error) {
+      alert(`Residuo eliminado correctamente`)
+      router.push("/residuos")
+    } else {
+      alert("Error al eliminar residuo")
+    }
+  }
 
   return (
     <div className="p-6">
