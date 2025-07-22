@@ -46,6 +46,13 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
   const { t, setLanguage, language } = useLanguage();
   const { theme, setTheme } = useTheme();
   const isDesktop = useIsDesktop();
+  // Log para depuración
+  useEffect(() => {
+    console.log("[Sidebar] user:", user);
+    if (user) {
+      console.log("[Sidebar] user.rol:", user.rol);
+    }
+  }, [user]);
 
   // Example nav items (customize as needed)
   const navItems: NavItem[] = [
@@ -103,119 +110,133 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
         <nav className="space-y-1">
-          {/* Main */}
-          {groupedItems.main?.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start gap-3 h-11 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2 justify-center")}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                </Button>
-              </Link>
-            );
-          })}
-          {/* Divider */}
-          {groupedItems.operations && !isCollapsed && <div className="my-4 border-t border-border/50" />}
-          {/* Operations */}
-          {groupedItems.operations?.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                </Button>
-              </Link>
-            );
-          })}
-          {/* Logistics */}
-          {groupedItems.logistics && !isCollapsed && (
-            <div className="px-2 py-2 mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Logística</h3>
+          {/* Si no hay usuario o no tiene rol válido, mostrar mensaje */}
+          {!user ? (
+            <div className="text-center text-muted-foreground py-8">
+              <p>No hay usuario autenticado.</p>
             </div>
-          )}
-          {groupedItems.logistics?.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                </Button>
-              </Link>
-            );
-          })}
-          {/* Management */}
-          {groupedItems.management && !isCollapsed && (
-            <div className="px-2 py-2 mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gestión</h3>
+          ) : filteredNavItems.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              <p>No tienes permisos para ver módulos.</p>
+              <p>Tu rol: <span className="font-mono">{user.rol}</span></p>
             </div>
+          ) : (
+            <>
+              {/* Main */}
+              {groupedItems.main?.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start gap-3 h-11 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2 justify-center")}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                    </Button>
+                  </Link>
+                );
+              })}
+              {/* Divider */}
+              {groupedItems.operations && !isCollapsed && <div className="my-4 border-t border-border/50" />}
+              {/* Operations */}
+              {groupedItems.operations?.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                    </Button>
+                  </Link>
+                );
+              })}
+              {/* Logistics */}
+              {groupedItems.logistics && !isCollapsed && (
+                <div className="px-2 py-2 mt-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Logística</h3>
+                </div>
+              )}
+              {groupedItems.logistics?.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                    </Button>
+                  </Link>
+                );
+              })}
+              {/* Management */}
+              {groupedItems.management && !isCollapsed && (
+                <div className="px-2 py-2 mt-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gestión</h3>
+                </div>
+              )}
+              {groupedItems.management?.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                    </Button>
+                  </Link>
+                );
+              })}
+              {/* Training */}
+              {groupedItems.training?.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                    </Button>
+                  </Link>
+                );
+              })}
+              {/* Admin */}
+              {groupedItems.admin && !isCollapsed && (
+                <div className="px-2 py-2 mt-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administración</h3>
+                </div>
+              )}
+              {groupedItems.admin?.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
+                    </Button>
+                  </Link>
+                );
+              })}
+            </>
           )}
-          {groupedItems.management?.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                </Button>
-              </Link>
-            );
-          })}
-          {/* Training */}
-          {groupedItems.training?.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                </Button>
-              </Link>
-            );
-          })}
-          {/* Admin */}
-          {groupedItems.admin && !isCollapsed && (
-            <div className="px-2 py-2 mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administración</h3>
-            </div>
-          )}
-          {groupedItems.admin?.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                </Button>
-              </Link>
-            );
-          })}
         </nav>
       </ScrollArea>
 
