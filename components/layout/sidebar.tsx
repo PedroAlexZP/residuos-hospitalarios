@@ -56,14 +56,14 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
 
   // Example nav items (customize as needed)
   const navItems: NavItem[] = [
-    { title: "Dashboard", translationKey: "dashboard", href: "/dashboard", icon: Home, roles: ["admin", "user"], group: "main" },
-    { title: "Residuos", translationKey: "residuos", href: "/residuos", icon: Trash2, roles: ["admin", "user"], group: "operations" },
-    { title: "Etiquetas", translationKey: "etiquetas", href: "/etiquetas", icon: QrCode, roles: ["admin", "user"], group: "operations" },
-    { title: "Pesaje", translationKey: "pesaje", href: "/pesaje", icon: Scale, roles: ["admin", "user"], group: "operations" },
-    { title: "Entregas", translationKey: "entregas", href: "/entregas", icon: Truck, roles: ["admin", "user"], group: "logistics" },
-    { title: "Incidencias", translationKey: "incidencias", href: "/incidencias", icon: AlertTriangle, roles: ["admin", "user"], group: "management" },
-    { title: "Reportes", translationKey: "reportes", href: "/reportes", icon: BarChart3, roles: ["admin", "user"], group: "management" },
-    { title: "Capacitaciones", translationKey: "capacitaciones", href: "/capacitaciones", icon: BookOpen, roles: ["admin", "user"], group: "training" },
+    { title: "Dashboard", translationKey: "dashboard", href: "/dashboard", icon: Home, roles: ["admin", "user", "generador", "supervisor", "transportista", "gestor_externo"], group: "main" },
+    { title: "Residuos", translationKey: "residuos", href: "/residuos", icon: Trash2, roles: ["admin", "user", "generador", "supervisor"], group: "operations" },
+    { title: "Etiquetas", translationKey: "etiquetas", href: "/etiquetas", icon: QrCode, roles: ["admin", "user", "generador", "supervisor"], group: "operations" },
+    { title: "Pesaje", translationKey: "pesaje", href: "/pesaje", icon: Scale, roles: ["admin", "user", "generador", "supervisor"], group: "operations" },
+    { title: "Entregas", translationKey: "entregas", href: "/entregas", icon: Truck, roles: ["admin", "user", "transportista", "supervisor"], group: "logistics" },
+    { title: "Incidencias", translationKey: "incidencias", href: "/incidencias", icon: AlertTriangle, roles: ["admin", "user", "supervisor"], group: "management" },
+    { title: "Reportes", translationKey: "reportes", href: "/reportes", icon: BarChart3, roles: ["admin", "user", "supervisor"], group: "management" },
+    { title: "Capacitaciones", translationKey: "capacitaciones", href: "/capacitaciones", icon: BookOpen, roles: ["admin", "user", "generador", "supervisor"], group: "training" },
     { title: "Usuarios", translationKey: "usuarios", href: "/usuarios", icon: Users, roles: ["admin"], group: "admin" },
   ];
 
