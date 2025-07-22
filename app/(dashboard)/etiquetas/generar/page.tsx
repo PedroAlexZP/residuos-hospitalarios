@@ -11,7 +11,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, QrCode, Printer, Download, Info } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser } from "@/lib/auth"
 import { WASTE_TYPES } from "@/lib/constants"
 import { useToast } from "@/hooks/use-toast"
 import QRCodeLib from "qrcode"
@@ -37,8 +36,34 @@ export default function GenerarEtiquetaPage() {
   const [residuos, setResiduos] = useState<Residuo[]>([])
   const [selectedResiduo, setSelectedResiduo] = useState<string>("")
   const [tipoEtiqueta, setTipoEtiqueta] = useState<"QR" | "codigo_barras">("QR")
+
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("")
   const [generatedCode, setGeneratedCode] = useState<string>("")
+
+  // Cargar residuos desde la base de datos al montar
+  useEffect(() => {
+    async function fetchResiduos() {
+      const { data, error } = await supabase
+        .from("residuos")
+        .select(`
+          id,
+          tipo,
+          cantidad,
+          ubicacion,
+          fecha_generacion,
+          usuario:nombre_completo,
+          usuario:departamento
+        `)
+        .eq("estado", "pendiente"); // Cambia el filtro si es necesario
+
+      if (error) {
+        console.error("Error al obtener residuos:", error);
+        return;
+      }
+      setResiduos(data || []);
+    }
+    fetchResiduos();
+  }, []);
 
   // Usa useCallback para memoizar generatePreview y evitar el warning de dependencias en useEffect.
   const generatePreview = useCallback(async () => {
@@ -174,13 +199,9 @@ export default function GenerarEtiquetaPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {residuos.length === 0 ? (
-<<<<<<< HEAD
                       <SelectItem value="no-data" disabled>
                         No hay residuos disponibles
                       </SelectItem>
-=======
-                      <div className="px-3 py-2 text-muted-foreground text-sm select-none">No hay residuos disponibles</div>
->>>>>>> 84b44f69756496e2905b626b93b1d4aa7adc8492
                     ) : (
                       residuos.map((residuo) => {
                         const type = WASTE_TYPES.find((w) => w.value === residuo.tipo)

@@ -1,177 +1,30 @@
 "use client"
-
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import {
-  Menu,
-  Home,
-  Trash2,
-  QrCode,
-  Scale,
-  Truck,
-  AlertTriangle,
-  FileText,
-  BookOpen,
-  Users,
-  LogOut,
-  Sun,
-  Moon,
-  Languages,
-} from "lucide-react"
-import { useTheme } from "next-themes"
-import { useLanguage } from "@/hooks/use-language"
-import { getUserPermissions, hasPermission, type Permission } from "@/lib/permissions"
-import { useAuth } from "@/hooks/use-auth"
-
-interface SidebarProps {
-  className?: string
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Trash2, Home, Plus, QrCode, Scale, Truck, AlertTriangle, BarChart3, Shield, BookOpen, Users, Sun, Moon, Languages, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
+import { useTheme } from "next-themes";
+import type { Permission } from "@/lib/permissions";
+// Types
+export interface NavItem {
+  title: string;
+  translationKey: string;
+  href: string;
+  icon: any;
+  roles: string[];
+  module?: string;
+  group?: string;
+  isSubItem?: boolean;
 }
 
-interface NavItem {
-  title: string
-  translationKey: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  roles: string[]
-  module?: string
-  group?: string
-  isSubItem?: boolean
+export interface SidebarProps {
+  className?: string;
 }
-
-interface NavGroup {
-  title: string
-  translationKey: string
-  items: NavItem[]
-}
-
-const navItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    translationKey: "dashboard",
-    href: "/dashboard",
-    icon: Home,
-    roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
-    group: "main"
-  },
-  {
-    title: "Residuos",
-    translationKey: "residuos",
-    href: "/residuos",
-    icon: Trash2,
-    roles: ["generador", "supervisor", "admin"],
-    module: "residuos",
-    group: "operations"
-  },
-  {
-    title: "Nuevo Residuo",
-    translationKey: "nuevoResiduo",
-    href: "/residuos/nuevo",
-    icon: Plus,
-    roles: ["generador", "supervisor", "admin"],
-    module: "residuos",
-    group: "operations",
-    isSubItem: true
-  },
-  {
-    title: "Etiquetas",
-    translationKey: "etiquetas",
-    href: "/etiquetas",
-    icon: QrCode,
-    roles: ["generador", "supervisor", "admin"],
-    module: "etiquetas",
-    group: "operations"
-  },
-  {
-    title: "Generar Etiqueta",
-    translationKey: "generarEtiqueta",
-    href: "/etiquetas/generar",
-    icon: Plus,
-    roles: ["generador", "supervisor", "admin"],
-    module: "etiquetas",
-    group: "operations",
-    isSubItem: true
-  },
-  {
-    title: "Pesaje",
-    translationKey: "pesaje",
-    href: "/pesaje",
-    icon: Scale,
-    roles: ["supervisor", "transportista", "admin"],
-    module: "pesajes",
-    group: "operations"
-  },
-  {
-    title: "Entregas",
-    translationKey: "entregas",
-    href: "/entregas",
-    icon: Truck,
-    roles: ["supervisor", "transportista", "gestor_externo", "admin"],
-    module: "entregas",
-    group: "logistics"
-  },
-  {
-    title: "Nueva Entrega",
-    translationKey: "nuevaEntrega",
-    href: "/entregas/nueva",
-    icon: Plus,
-    roles: ["supervisor", "transportista", "admin"],
-    module: "entregas",
-    group: "logistics",
-    isSubItem: true
-  },
-  {
-    title: "Incidencias",
-    translationKey: "incidencias",
-    href: "/incidencias",
-    icon: AlertTriangle,
-    roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
-    module: "incidencias",
-    group: "management"
-  },
-  {
-    title: "Reportes",
-    translationKey: "reportes",
-    href: "/reportes",
-    icon: BarChart3,
-    roles: ["supervisor", "gestor_externo", "admin"],
-    module: "reportes",
-    group: "management"
-  },
-  {
-    title: "Cumplimiento",
-    translationKey: "cumplimiento", 
-    href: "/cumplimiento",
-    icon: Shield,
-    roles: ["supervisor", "gestor_externo", "admin"],
-    module: "cumplimiento",
-    group: "management"
-  },
-  {
-    title: "Capacitaciones",
-    translationKey: "capacitaciones",
-    href: "/capacitaciones",
-    icon: BookOpen,
-    roles: ["generador", "supervisor", "transportista", "gestor_externo", "admin"],
-    module: "capacitaciones",
-    group: "training"
-  },
-  {
-    title: "Usuarios",
-    translationKey: "usuarios",
-    href: "/usuarios",
-    icon: Users,
-    roles: ["admin"],
-    module: "usuarios",
-    group: "admin"
-  },
-]
 
 // Hook para detectar si es escritorio (md+)
 export function useIsDesktop() {
@@ -186,73 +39,52 @@ export function useIsDesktop() {
 }
 
 export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open?: boolean, onOpenChange?: (open: boolean) => void }) {
-  const { user, signOut } = useAuth()
-  const { t, language, setLanguage } = useLanguage()
-  const [permissions, setPermissions] = useState<Permission[]>([])
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
-  const isDesktop = useIsDesktop()
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user, signOut } = useAuth();
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const pathname = usePathname();
+  const { t, setLanguage, language } = useLanguage();
+  const { theme, setTheme } = useTheme();
+  const isDesktop = useIsDesktop();
 
-  useEffect(() => {
-    const loadPermissions = async () => {
-      if (user) {
-        try {
-          const userPermissions = await getUserPermissions(user.rol)
-          setPermissions(userPermissions)
-          console.log("ROL DEL USUARIO:", user.rol)
-          console.log("PERMISOS OBTENIDOS:", userPermissions)
-        } catch (error) {
-          console.error("Error loading permissions:", error)
-        }
-      }
-    }
+  // Example nav items (customize as needed)
+  const navItems: NavItem[] = [
+    { title: "Dashboard", translationKey: "dashboard", href: "/dashboard", icon: Home, roles: ["admin", "user"], group: "main" },
+    { title: "Residuos", translationKey: "residuos", href: "/residuos", icon: Trash2, roles: ["admin", "user"], group: "operations" },
+    { title: "Etiquetas", translationKey: "etiquetas", href: "/etiquetas", icon: QrCode, roles: ["admin", "user"], group: "operations" },
+    { title: "Pesaje", translationKey: "pesaje", href: "/pesaje", icon: Scale, roles: ["admin", "user"], group: "operations" },
+    { title: "Entregas", translationKey: "entregas", href: "/entregas", icon: Truck, roles: ["admin", "user"], group: "logistics" },
+    { title: "Incidencias", translationKey: "incidencias", href: "/incidencias", icon: AlertTriangle, roles: ["admin", "user"], group: "management" },
+    { title: "Reportes", translationKey: "reportes", href: "/reportes", icon: BarChart3, roles: ["admin", "user"], group: "management" },
+    { title: "Capacitaciones", translationKey: "capacitaciones", href: "/capacitaciones", icon: BookOpen, roles: ["admin", "user"], group: "training" },
+    { title: "Usuarios", translationKey: "usuarios", href: "/usuarios", icon: Users, roles: ["admin"], group: "admin" },
+  ];
 
-    loadPermissions()
-  }, [user])
+  // Permission check (customize as needed)
+  const canAccessItem = (item: NavItem) => {
+    if (!user) return false;
+    if (!item.roles.includes(user.rol)) return false;
+    return true;
+  };
+  const filteredNavItems = navItems.filter(canAccessItem);
+  const groupedItems = filteredNavItems.reduce((groups, item) => {
+    const group = item.group || 'other';
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(item);
+    return groups;
+  }, {} as Record<string, NavItem[]>);
 
+  // Sign out handler
   const handleSignOut = async () => {
     try {
-      await signOut()
-      window.location.href = "/auth/login"
-    } catch (error) {
-      console.error("Error signing out:", error)
-    }
-  }
+      await signOut();
+      window.location.href = "/auth/login";
+    } catch (error) {}
+  };
 
-  const canAccessItem = (item: NavItem) => {
-    if (!user) return false
-
-    // Verificar rol
-    if (!item.roles.includes(user.rol)) return false
-
-    // Verificar permisos específicos del módulo
-    if (item.module) {
-      return hasPermission(permissions, item.module, "lectura")
-    }
-
-    return true
-  }
-
-  const filteredNavItems = navItems.filter(canAccessItem)
-
-<<<<<<< HEAD
-  // Agrupar elementos por categoría
-  const groupedItems = filteredNavItems.reduce((groups, item) => {
-    const group = item.group || 'other'
-    if (!groups[group]) {
-      groups[group] = []
-    }
-    groups[group].push(item)
-    return groups
-  }, {} as Record<string, NavItem[]>)
-
-  const SidebarContent = () => (
-=======
-  // Cambia SidebarContent para aceptar isCollapsed
-  const SidebarContent = ({ isCollapsed = false }: { isCollapsed?: boolean }) => (
->>>>>>> 84b44f69756496e2905b626b93b1d4aa7adc8492
-    <div className="flex h-full flex-col">
+  // Sidebar UI
+  return (
+    <div className={cn("flex h-full flex-col bg-background border-r w-64 min-w-[220px] transition-all duration-200", className, isCollapsed && "w-20 min-w-[60px]")}> 
       {/* Header */}
       <div className="flex h-16 items-center border-b px-4">
         <div className="flex items-center gap-2">
@@ -271,194 +103,118 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
         <nav className="space-y-1">
-          {/* Dashboard siempre al inicio */}
+          {/* Main */}
           {groupedItems.main?.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-11 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2 justify-center"
-                  )}
+                  className={cn("w-full justify-start gap-3 h-11 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2 justify-center")}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
-            )
+            );
           })}
-          
-          {/* Separador */}
-          {groupedItems.main && !isCollapsed && (
-            <div className="my-4 border-t border-border/50" />
-          )}
-
-          {/* Operaciones */}
-          {groupedItems.operations && !isCollapsed && (
-            <div className="px-2 py-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Operaciones
-              </h3>
-            </div>
-          )}
+          {/* Divider */}
+          {groupedItems.operations && !isCollapsed && <div className="my-4 border-t border-border/50" />}
+          {/* Operations */}
           {groupedItems.operations?.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-10 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2",
-                    item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]",
-                    item.isSubItem && "h-9 text-sm"
-                  )}
+                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
-            )
+            );
           })}
-
-          {/* Logística */}
+          {/* Logistics */}
           {groupedItems.logistics && !isCollapsed && (
             <div className="px-2 py-2 mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Logística
-              </h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Logística</h3>
             </div>
           )}
           {groupedItems.logistics?.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-10 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2",
-                    item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]",
-                    item.isSubItem && "h-9 text-sm"
-                  )}
+                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
-            )
+            );
           })}
-
-          {/* Gestión */}
+          {/* Management */}
           {groupedItems.management && !isCollapsed && (
             <div className="px-2 py-2 mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Gestión
-              </h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gestión</h3>
             </div>
           )}
           {groupedItems.management?.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-10 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2",
-                  )}
+                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
-            )
+            );
           })}
-
-          {/* Capacitación */}
+          {/* Training */}
           {groupedItems.training?.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-10 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2",
-                  )}
+                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
-            )
+            );
           })}
-
-          {/* Administración */}
+          {/* Admin */}
           {groupedItems.admin && !isCollapsed && (
             <div className="px-2 py-2 mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Administración
-              </h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administración</h3>
             </div>
           )}
           {groupedItems.admin?.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-10 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    isCollapsed && "px-2",
-                  )}
+                  className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   {!isCollapsed && <span>{t(item.translationKey)}</span>}
                 </Button>
               </Link>
-            )
-          })}
-
-          {/* Cuando está colapsado, mostrar todos los elementos sin grupos */}
-          {isCollapsed && filteredNavItems.slice(1).map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 h-10 sidebar-button",
-                    isActive && "bg-secondary font-medium shadow-sm",
-                    "px-2",
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                </Button>
-              </Link>
-            )
+            );
           })}
         </nav>
       </ScrollArea>
@@ -477,7 +233,6 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
             {!isCollapsed && <span>{t("changeTheme")}</span>}
           </Button>
         </div>
-
         {/* Language Toggle */}
         <div className="mb-3">
           <Button
@@ -490,7 +245,6 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
             {!isCollapsed && <span>{t("changeLanguage")}</span>}
           </Button>
         </div>
-
         {/* Logout */}
         <Button
           variant="ghost"
@@ -503,43 +257,6 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
         </Button>
       </div>
     </div>
-  )
-
-  // Sidebar sticky y colapsable para escritorio
-  const DesktopSidebar = () => (
-    <aside
-      className={cn(
-        "hidden md:sticky md:top-0 md:bg-background md:border-r sidebar-transition",
-        isCollapsed ? "md:w-16" : "md:w-64",
-        "h-screen flex flex-col",
-        className
-      )}
-    >
-      <SidebarContent isCollapsed={isCollapsed} />
-      {/* Botón para colapsar/expandir solo en escritorio */}
-      <button
-        className="hidden md:block absolute -right-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md hover:shadow-lg sidebar-transition"
-        onClick={() => setIsCollapsed((v) => !v)}
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        type="button"
-      >
-        <Menu className={cn("h-4 w-4 sidebar-transition", isCollapsed && "rotate-180")} />
-      </button>
-    </aside>
-  )
-
-  // Sidebar tipo drawer para móvil, ahora controlado por props
-  const MobileSidebar = () => (
-    <Sheet open={!!open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="p-0 w-64 max-w-full">
-        <SidebarContent />
-      </SheetContent>
-    </Sheet>
-  )
-
-  return isDesktop ? <DesktopSidebar /> : <MobileSidebar />
+  );
 }
 
-// Permitir que el layout use el estado de colapso
-export const SIDEBAR_WIDTH = 256 // w-64
-export const SIDEBAR_COLLAPSED_WIDTH = 64 // w-16

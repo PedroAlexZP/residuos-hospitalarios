@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sidebar as SidebarComponent } from "./sidebar"
+import { Sidebar as SidebarComponent, useIsDesktop } from "./sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLanguage } from "@/hooks/use-language"
-import { useIsDesktop } from "./sidebar"
 
 interface HeaderProps {
   title?: string
