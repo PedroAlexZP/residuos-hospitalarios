@@ -35,6 +35,7 @@ interface ResiduoPesado {
   usuario: {
     nombre_completo: string
   }
+  estado?: string
 }
 
 export default function NuevaEntregaPage() {
@@ -62,7 +63,19 @@ export default function NuevaEntregaPage() {
         if (gestoresError) throw gestoresError
         setGestores(gestoresData || [])
 
-        // Cargar residuos pesados que no han sido entregados
+        // Cargar residuos que pueden ser entregados
+        console.log("Iniciando consulta de residuos...")
+        
+        // Primero una consulta simple para verificar qué residuos existen
+        const { data: simpleResiduos, error: simpleError } = await supabase
+          .from("residuos")
+          .select("*")
+          .limit(10)
+
+        console.log("Consulta simple - residuos:", simpleResiduos)
+        console.log("Consulta simple - error:", simpleError)
+
+        // Luego la consulta completa
         const { data: residuosData, error: residuosError } = await supabase
           .from("residuos")
           .select(`
@@ -70,27 +83,37 @@ export default function NuevaEntregaPage() {
             tipo,
             cantidad,
             ubicacion,
-            usuario:users(nombre_completo),
-            pesajes(peso),
-            etiquetas(codigo_qr),
-            entrega_residuos(id)
+            estado,
+            created_at,
+            usuario_id
           `)
-          .eq("estado", "pesado")
-          .is("entrega_residuos.id", null)
+          .order("created_at", { ascending: false })
 
-        if (residuosError) throw residuosError
+        console.log("Residuos query result:", residuosData)
+        console.log("Residuos query error:", residuosError)
+
+        if (residuosError) {
+          console.error("Error en consulta de residuos:", residuosError)
+          throw residuosError
+        }
 
         // Procesar datos para obtener peso real y código QR
-        const residuosConPeso = (residuosData || []).map((residuo) => ({
-          id: residuo.id,
-          tipo: residuo.tipo,
-          cantidad: residuo.cantidad,
-          ubicacion: residuo.ubicacion,
-          peso_real: residuo.pesajes?.[0]?.peso || residuo.cantidad,
-          codigo_qr: residuo.etiquetas?.[0]?.codigo_qr || "",
-          usuario: Array.isArray(residuo.usuario) ? residuo.usuario[0] : residuo.usuario,
-        }))
+        const residuosConPeso = (residuosData || []).map((residuo) => {
+          console.log("Procesando residuo:", residuo)
+          
+          return {
+            id: residuo.id,
+            tipo: residuo.tipo,
+            cantidad: residuo.cantidad,
+            ubicacion: residuo.ubicacion,
+            peso_real: residuo.cantidad, // Por ahora usar cantidad como peso
+            codigo_qr: `QR-${residuo.id.slice(0, 8)}`,
+            usuario: { nombre_completo: "Usuario desde DB" },
+            estado: residuo.estado,
+          }
+        })
 
+        console.log("Residuos procesados:", residuosConPeso)
         setResiduosPesados(residuosConPeso)
       } catch (error) {
         console.error("Error loading data:", error)
@@ -133,7 +156,7 @@ export default function NuevaEntregaPage() {
       if (!user) throw new Error("Usuario no autenticado")
 
       // Generar número de seguimiento
-      const numeroSeguimiento = `ENT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`
+      const numeroSeguimiento = `ENT-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
 
       // Crear la entrega
       const { data: entregaData, error: entregaError } = await supabase
@@ -185,8 +208,9 @@ export default function NuevaEntregaPage() {
     }
   }
 
-  const handleResiduoToggle = (residuoId: string, checked: boolean) => {
-    if (checked) {
+  const handleResiduoToggle = (residuoId: string, checked: boolean | "indeterminate") => {
+    const isChecked = checked === true
+    if (isChecked) {
       setSelectedResiduos((prev) => [...prev, residuoId])
     } else {
       setSelectedResiduos((prev) => prev.filter((id) => id !== residuoId))
@@ -292,12 +316,15 @@ export default function NuevaEntregaPage() {
                           <Checkbox
                             id={residuo.id}
                             checked={selectedResiduos.includes(residuo.id)}
-                            onCheckedChange={(checked) => handleResiduoToggle(residuo.id, checked as boolean)}
+                            onCheckedChange={(checked) => handleResiduoToggle(residuo.id, checked)}
                           />
                           <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2">
                               {wasteType && <div className={`h-3 w-3 rounded-full bg-${wasteType.color}-500`} />}
                               <Badge variant="outline">{wasteType?.label || residuo.tipo}</Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                {residuo.estado}
+                              </Badge>
                               <code className="text-xs text-muted-foreground">{residuo.codigo_qr}</code>
                             </div>
                             <div className="text-sm text-muted-foreground">

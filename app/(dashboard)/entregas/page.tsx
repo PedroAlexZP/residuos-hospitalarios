@@ -334,7 +334,26 @@ export default function EntregasPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{entrega.entrega_residuos.length} residuo(s)</Badge>
+                          <div className="space-y-1">
+                            <Badge variant="outline" className="mb-1">
+                              {entrega.entrega_residuos.length} residuo(s)
+                            </Badge>
+                            <div className="space-y-1">
+                              {entrega.entrega_residuos.slice(0, 3).map((er, index) => (
+                                <div key={index} className="text-xs text-muted-foreground">
+                                  <span className="font-medium">
+                                    {er.residuo.tipo.charAt(0).toUpperCase() + er.residuo.tipo.slice(1)}:
+                                  </span>{" "}
+                                  {er.residuo.cantidad}kg - {er.residuo.ubicacion}
+                                </div>
+                              ))}
+                              {entrega.entrega_residuos.length > 3 && (
+                                <div className="text-xs text-muted-foreground italic">
+                                  +{entrega.entrega_residuos.length - 3} más...
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="font-medium">{pesoTotalEntrega.toFixed(2)} kg</TableCell>
                         <TableCell>
