@@ -91,11 +91,12 @@ CREATE TABLE IF NOT EXISTS public.incidencias (
 CREATE TABLE IF NOT EXISTS public.reportes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tipo TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
   fecha_generacion TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   filtros_aplicados JSONB,
   usuario_id UUID REFERENCES public.users(id) NOT NULL,
   archivo_url TEXT,
-  estado TEXT DEFAULT 'generando' CHECK (estado IN ('generando', 'completado', 'error'))
+  estado TEXT DEFAULT 'generando' CHECK (estado IN ('generando', 'completado', 'error', 'pendiente'))
 );
 
 -- Tabla de capacitaciones

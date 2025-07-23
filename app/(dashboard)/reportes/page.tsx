@@ -137,7 +137,7 @@ export default function ReportesPage() {
           <p className="text-muted-foreground">Generación de reportes normativos y análisis de datos</p>
         </div>
         {user && ["supervisor", "admin"].includes(user.rol) && (
-          <Link href="/reportes/generar">
+          <Link href="/reportes/nuevo">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Generar Reporte
@@ -214,7 +214,7 @@ export default function ReportesPage() {
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {TIPOS_REPORTE.slice(0, 6).map((tipo) => (
-              <Link key={tipo.value} href={`/reportes/generar?tipo=${tipo.value}`}>
+              <Link key={tipo.value} href={`/reportes/nuevo?tipo=${tipo.value}`}>
                 <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors cursor-pointer">
                   <FileText className="h-5 w-5 text-primary" />
                   <div className="flex-1">

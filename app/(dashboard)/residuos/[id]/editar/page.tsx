@@ -77,6 +77,23 @@ export default function EditarResiduoPage() {
   return (
     <div className="p-6 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">{t("Editar Residuo")}</h1>
+
+      {/* Detalle del residuo actual */}
+      <div className="mb-6 p-4 bg-gray-50 border rounded">
+        <h2 className="text-lg font-semibold mb-2">{t("Detalle actual")}</h2>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="font-medium">{t("Tipo")}:</span> {t(form.tipo)}
+          </div>
+          <div>
+            <span className="font-medium">{t("Cantidad (kg)")}:</span> {form.cantidad}
+          </div>
+          <div>
+            <span className="font-medium">{t("Ubicación")}:</span> {form.ubicacion}
+          </div>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label htmlFor="tipo">{t("Tipo")}</Label>

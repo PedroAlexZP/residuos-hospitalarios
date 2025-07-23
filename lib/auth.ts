@@ -79,17 +79,9 @@ export const signIn = async (email: string, password: string) => {
       }
     }
 
-    // Store user info in session storage for quick access
-    if (typeof window !== 'undefined' && data.user) {
-      const userProfile = {
-        id: data.user.id,
-        email: data.user.email,
-        nombre_completo: data.user.user_metadata?.nombre_completo || '',
-        rol: data.user.user_metadata?.rol || 'generador',
-        departamento: data.user.user_metadata?.departamento || '',
-        activo: true
-      }
-      sessionStorage.setItem('user_profile', JSON.stringify(userProfile))
+    // Clear any old session storage data to force fresh fetch
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('user_profile')
     }
 
     return data
@@ -121,26 +113,52 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
   if (!user) return null
 
-  // Try to get from session storage first
-  if (typeof window !== 'undefined') {
-    const cached = sessionStorage.getItem('user_profile')
-    if (cached) {
-      try {
-        return JSON.parse(cached)
-      } catch {
-        // If parsing fails, continue to fetch from user metadata
+  try {
+    // ALWAYS fetch fresh data from public.users table
+    const { data: userProfile, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching user profile:', error)
+      // Fallback to user metadata if database query fails
+      return {
+        id: user.id,
+        email: user.email || '',
+        nombre_completo: user.user_metadata?.nombre_completo || '',
+        rol: user.user_metadata?.rol || 'generador',
+        departamento: user.user_metadata?.departamento || '',
+        activo: true
       }
     }
-  }
 
-  // Fallback to user metadata
-  return {
-    id: user.id,
-    email: user.email || '',
-    nombre_completo: user.user_metadata?.nombre_completo || '',
-    rol: user.user_metadata?.rol || 'generador',
-    departamento: user.user_metadata?.departamento || '',
-    activo: true
+    // Store updated profile in session storage for subsequent quick access
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('user_profile', JSON.stringify(userProfile))
+    }
+
+    return {
+      id: userProfile.id,
+      email: userProfile.email,
+      nombre_completo: userProfile.nombre_completo || '',
+      rol: userProfile.rol,
+      departamento: userProfile.departamento || '',
+      activo: userProfile.activo
+    }
+  } catch (error) {
+    console.error('Error in getCurrentUser:', error)
+    
+    // Fallback to user metadata
+    return {
+      id: user.id,
+      email: user.email || '',
+      nombre_completo: user.user_metadata?.nombre_completo || '',
+      rol: user.user_metadata?.rol || 'generador',
+      departamento: user.user_metadata?.departamento || '',
+      activo: true
+    }
   }
 }
 
