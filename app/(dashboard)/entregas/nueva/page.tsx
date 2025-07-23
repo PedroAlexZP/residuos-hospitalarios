@@ -63,19 +63,9 @@ export default function NuevaEntregaPage() {
         if (gestoresError) throw gestoresError
         setGestores(gestoresData || [])
 
-        // Cargar residuos que pueden ser entregados
+        // Cargar residuos disponibles para entrega
         console.log("Iniciando consulta de residuos...")
         
-        // Primero una consulta simple para verificar qué residuos existen
-        const { data: simpleResiduos, error: simpleError } = await supabase
-          .from("residuos")
-          .select("*")
-          .limit(10)
-
-        console.log("Consulta simple - residuos:", simpleResiduos)
-        console.log("Consulta simple - error:", simpleError)
-
-        // Luego la consulta completa
         const { data: residuosData, error: residuosError } = await supabase
           .from("residuos")
           .select(`
@@ -87,8 +77,10 @@ export default function NuevaEntregaPage() {
             created_at,
             usuario_id
           `)
+          .neq("estado", "entregado") // Excluir solo los ya entregados
           .order("created_at", { ascending: false })
 
+        console.log("Residuos encontrados:", residuosData?.length || 0)
         console.log("Residuos query result:", residuosData)
         console.log("Residuos query error:", residuosError)
 
@@ -240,8 +232,33 @@ export default function NuevaEntregaPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            No hay residuos pesados disponibles para entrega. Asegúrate de que los residuos hayan sido pesados antes de
-            crear una entrega.
+            No hay residuos disponibles para entrega. 
+            <br />
+            <Button 
+              variant="link" 
+              className="p-0 h-auto font-normal underline" 
+              onClick={() => window.open('/test/residuos', '_blank')}
+            >
+              Crear residuos de prueba aquí
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Debug info - temporal */}
+      {process.env.NODE_ENV === 'development' && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Debug:</strong> Se encontraron {residuosPesados.length} residuos disponibles.
+            {residuosPesados.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer">Ver residuos</summary>
+                <pre className="text-xs mt-2 p-2 bg-muted rounded">
+                  {JSON.stringify(residuosPesados.slice(0, 3), null, 2)}
+                </pre>
+              </details>
+            )}
           </AlertDescription>
         </Alert>
       )}

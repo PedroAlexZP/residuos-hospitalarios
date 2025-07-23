@@ -48,13 +48,13 @@ interface EntregaDetalle {
       id: string
       tipo: string
       cantidad: number
-      ubicacion: string
-      fecha_generacion: string
-      estado: string
+      ubicacion: string | null
+      fecha_generacion: string | null
+      estado: string | null
       usuario: {
         nombre_completo: string
-        departamento: string
-      }
+        departamento: string | null
+      } | null
     }
   }[]
 }
@@ -90,12 +90,12 @@ export default function EntregaDetallePage() {
         .from("entregas")
         .select(`
           *,
-          usuario:users(nombre_completo, departamento, email),
-          gestor_externo:gestores_externos(id, nombre, licencia, contacto),
+          usuario:users!entregas_usuario_id_fkey(nombre_completo, departamento, email),
+          gestor_externo:gestores_externos!entregas_gestor_externo_id_fkey(id, nombre, licencia, contacto),
           entrega_residuos(
             residuo:residuos(
               id, tipo, cantidad, ubicacion, fecha_generacion, estado,
-              usuario:users(nombre_completo, departamento)
+              usuario:users!residuos_usuario_id_fkey(nombre_completo, departamento)
             )
           )
         `)
@@ -109,12 +109,24 @@ export default function EntregaDetallePage() {
       const { data, error } = await query.single()
 
       if (error) {
+        console.error("Error en consulta de entrega:", error)
         if (error.code === 'PGRST116') {
           setError("Entrega no encontrada o no tienes permisos para verla")
         } else {
           throw error
         }
         return
+      }
+
+      console.log("Datos de entrega obtenidos:", data)
+      console.log("Residuos en entrega:", data?.entrega_residuos)
+      
+      // Verificar si hay residuos con usuarios nulos
+      if (data?.entrega_residuos) {
+        const residuosSinUsuario = data.entrega_residuos.filter((er: any) => !er.residuo.usuario)
+        if (residuosSinUsuario.length > 0) {
+          console.warn("Residuos sin usuario encontrados:", residuosSinUsuario.length)
+        }
       }
 
       setEntrega(data)
@@ -347,25 +359,39 @@ export default function EntregaDetallePage() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3 text-muted-foreground" />
-                        {er.residuo.ubicacion}
+                        {er.residuo.ubicacion || "Ubicación no especificada"}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{er.residuo.usuario.nombre_completo}</div>
-                        {er.residuo.usuario.departamento && (
-                          <div className="text-sm text-muted-foreground">
-                            {er.residuo.usuario.departamento}
+                      {er.residuo.usuario ? (
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {er.residuo.usuario.nombre_completo}
                           </div>
-                        )}
-                      </div>
+                          {er.residuo.usuario.departamento && (
+                            <div className="text-sm text-muted-foreground">
+                              {er.residuo.usuario.departamento}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic">
+                          Usuario no disponible
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(er.residuo.fecha_generacion), "dd/MM/yyyy HH:mm", { locale: es })}
+                      {er.residuo.fecha_generacion ? 
+                        format(new Date(er.residuo.fecha_generacion), "dd/MM/yyyy HH:mm", { locale: es }) :
+                        "Fecha no disponible"
+                      }
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {er.residuo.estado.charAt(0).toUpperCase() + er.residuo.estado.slice(1)}
+                        {er.residuo.estado ? 
+                          er.residuo.estado.charAt(0).toUpperCase() + er.residuo.estado.slice(1) : 
+                          "Estado desconocido"
+                        }
                       </Badge>
                     </TableCell>
                   </TableRow>
