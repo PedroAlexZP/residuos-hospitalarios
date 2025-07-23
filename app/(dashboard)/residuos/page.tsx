@@ -1,119 +1,173 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Search, MoreHorizontal, Eye, Edit, QrCode, Trash2 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User } from "@/lib/auth"
-import { WASTE_TYPES } from "@/lib/constants"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { useLanguage } from "@/hooks/use-language"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  QrCode,
+  Trash2,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { getCurrentUser, type User } from "@/lib/auth";
+import { WASTE_TYPES } from "@/lib/constants";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useLanguage } from "@/hooks/use-language";
 
 interface Residuo {
-  id: string
-  tipo: string
-  cantidad: number
-  ubicacion: string
-  fecha_generacion: string
-  estado: string
-  created_at: string
+  id: string;
+  tipo: string;
+  cantidad: number;
+  ubicacion: string;
+  fecha_generacion: string;
+  estado: string;
+  created_at: string;
   usuario: {
-    nombre_completo: string
-    departamento: string
-  }
+    nombre_completo: string;
+    departamento: string | null;
+  } | null;
   etiquetas: {
-    id: string
-    codigo_qr: string
-    tipo_etiqueta: string
-  }[]
+    id: string;
+    codigo_qr: string;
+    tipo_etiqueta: string;
+  }[];
 }
 
 export default function ResiduosPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [residuos, setResiduos] = useState<Residuo[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterTipo, setFilterTipo] = useState<string>("all")
-  const [filterEstado, setFilterEstado] = useState<string>("all")
-  const { t } = useLanguage()
+  const [user, setUser] = useState<User | null>(null);
+  const [residuos, setResiduos] = useState<Residuo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipo, setFilterTipo] = useState<string>("all");
+  const [filterEstado, setFilterEstado] = useState<string>("all");
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
         if (currentUser) {
-          await loadResiduos(currentUser)
+          await loadResiduos(currentUser);
         }
       } catch (error) {
-        console.error("Error loading data:", error)
+        console.error("Error loading data:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   const loadResiduos = async (user: User) => {
     try {
       let query = supabase
         .from("residuos")
-        .select(`
+        .select(
+          `
           *,
-          usuario:users(nombre_completo, departamento),
+          usuario:users!residuos_usuario_id_fkey(nombre_completo, departamento),
           etiquetas(id, codigo_qr, tipo_etiqueta)
-        `)
-        .order("created_at", { ascending: false })
+        `
+        )
+        .order("created_at", { ascending: false });
 
       // Filtrar por usuario si no es supervisor o admin
       if (!["supervisor", "admin"].includes(user.rol)) {
-        query = query.eq("usuario_id", user.id)
+        query = query.eq("usuario_id", user.id);
       }
 
-      const { data, error } = await query
+      const { data, error } = await query;
 
-      if (error) throw error
-      setResiduos(data || [])
+      if (error) {
+        console.error("Error loading residuos:", error);
+        throw error;
+      }
+      
+      console.log("Residuos cargados:", data?.length || 0);
+      console.log("Residuos sin usuario:", data?.filter(r => !r.usuario).length || 0);
+      
+      setResiduos(data || []);
     } catch (error) {
-      console.error("Error loading residuos:", error)
+      console.error("Error loading residuos:", error);
     }
-  }
+  };
 
   const getWasteTypeInfo = (tipo: string) => {
-    return WASTE_TYPES.find((w) => w.value === tipo) || { label: tipo, color: "gray" }
-  }
+    return (
+      WASTE_TYPES.find((w) => w.value === tipo) || {
+        label: tipo,
+        color: "gray",
+      }
+    );
+  };
 
-  const getEstadoBadge = (estado: string): "default" | "destructive" | "outline" | "secondary" => {
-    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
+  const getEstadoBadge = (
+    estado: string
+  ): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<
+      string,
+      "default" | "destructive" | "outline" | "secondary"
+    > = {
       generado: "secondary",
       etiquetado: "default",
       pesado: "outline",
       almacenado: "secondary",
       entregado: "default",
-    }
-    return variants[estado] ?? "secondary"
-  }
+    };
+    return variants[estado] ?? "secondary";
+  };
 
   const filteredResiduos = residuos.filter((residuo) => {
     const matchesSearch =
       residuo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       residuo.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      residuo.usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (residuo.usuario?.nombre_completo || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-    const matchesTipo = filterTipo === "all" || residuo.tipo === filterTipo
-    const matchesEstado = filterEstado === "all" || residuo.estado === filterEstado
+    const matchesTipo = filterTipo === "all" || residuo.tipo === filterTipo;
+    const matchesEstado =
+      filterEstado === "all" || residuo.estado === filterEstado;
 
-    return matchesSearch && matchesTipo && matchesEstado
-  })
+    return matchesSearch && matchesTipo && matchesEstado;
+  });
 
   if (loading) {
     return (
@@ -123,12 +177,12 @@ export default function ResiduosPage() {
           <div className="h-10 bg-muted animate-pulse rounded w-32" />
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={`residuo-skeleton-loading-${i}`} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -136,8 +190,12 @@ export default function ResiduosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("gestionResiduos")}</h1>
-          <p className="text-muted-foreground">{t("registroSeguimientoResiduos")}</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("gestionResiduos")}
+          </h1>
+          <p className="text-muted-foreground">
+            {t("registroSeguimientoResiduos")}
+          </p>
         </div>
         {user && ["generador", "admin"].includes(user.rol) && (
           <Link href="/residuos/nuevo">
@@ -153,7 +211,9 @@ export default function ResiduosPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("totalResiduos")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("totalResiduos")}
+            </CardTitle>
             <Trash2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -163,21 +223,29 @@ export default function ResiduosPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("pendientes")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("pendientes")}
+            </CardTitle>
             <div className="h-2 w-2 bg-yellow-500 rounded-full" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{residuos.filter((r) => r.estado === "generado").length}</div>
+            <div className="text-2xl font-bold">
+              {residuos.filter((r) => r.estado === "generado").length}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("etiquetados")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("etiquetados")}
+            </CardTitle>
             <QrCode className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{residuos.filter((r) => r.etiquetas.length > 0).length}</div>
+            <div className="text-2xl font-bold">
+              {residuos.filter((r) => r.etiquetas.length > 0).length}
+            </div>
           </CardContent>
         </Card>
 
@@ -187,7 +255,9 @@ export default function ResiduosPage() {
             <div className="h-2 w-2 bg-green-500 rounded-full" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{residuos.filter((r) => r.estado === "entregado").length}</div>
+            <div className="text-2xl font-bold">
+              {residuos.filter((r) => r.estado === "entregado").length}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -243,9 +313,9 @@ export default function ResiduosPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSearchTerm("")
-                  setFilterTipo("all")
-                  setFilterEstado("all")
+                  setSearchTerm("");
+                  setFilterTipo("all");
+                  setFilterEstado("all");
                 }}
               >
                 Limpiar
@@ -287,7 +357,7 @@ export default function ResiduosPage() {
                   </TableRow>
                 ) : (
                   filteredResiduos.map((residuo) => {
-                    const wasteType = getWasteTypeInfo(residuo.tipo)
+                    const wasteType = getWasteTypeInfo(residuo.tipo);
                     return (
                       <TableRow key={residuo.id}>
                         <TableCell>
@@ -295,23 +365,40 @@ export default function ResiduosPage() {
                             {wasteType.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium">{residuo.cantidad} kg</TableCell>
+                        <TableCell className="font-medium">
+                          {residuo.cantidad} kg
+                        </TableCell>
                         <TableCell>{residuo.ubicacion}</TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium">{residuo.usuario.nombre_completo}</div>
-                            {residuo.usuario.departamento && (
-                              <div className="text-sm text-muted-foreground">{residuo.usuario.departamento}</div>
-                            )}
-                          </div>
+                          {residuo.usuario ? (
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {residuo.usuario.nombre_completo}
+                              </div>
+                              {residuo.usuario.departamento && (
+                                <div className="text-sm text-muted-foreground">
+                                  {residuo.usuario.departamento}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground italic">
+                              Usuario no disponible
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={getEstadoBadge(residuo.estado)}>
-                            {residuo.estado.charAt(0).toUpperCase() + residuo.estado.slice(1)}
+                            {residuo.estado.charAt(0).toUpperCase() +
+                              residuo.estado.slice(1)}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(residuo.fecha_generacion), "dd/MM/yyyy HH:mm", { locale: es })}
+                          {format(
+                            new Date(residuo.fecha_generacion),
+                            "dd/MM/yyyy HH:mm",
+                            { locale: es }
+                          )}
                         </TableCell>
                         <TableCell>
                           {residuo.etiquetas.length > 0 ? (
@@ -339,9 +426,11 @@ export default function ResiduosPage() {
                                 </Link>
                               </DropdownMenuItem>
                               {user &&
-                                (["supervisor", "admin"].includes(user.rol)) && (
+                                ["supervisor", "admin"].includes(user.rol) && (
                                   <DropdownMenuItem asChild>
-                                    <Link href={`/residuos/${residuo.id}/editar`}>
+                                    <Link
+                                      href={`/residuos/${residuo.id}/editar`}
+                                    >
                                       <Edit className="mr-2 h-4 w-4" />
                                       {t("editar")}
                                     </Link>
@@ -349,7 +438,9 @@ export default function ResiduosPage() {
                                 )}
                               {residuo.etiquetas.length === 0 && (
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/etiquetas/generar?residuo=${residuo.id}`}>
+                                  <Link
+                                    href={`/etiquetas/generar?residuo=${residuo.id}`}
+                                  >
                                     <QrCode className="mr-2 h-4 w-4" />
                                     {t("generarEtiqueta")}
                                   </Link>
@@ -359,7 +450,7 @@ export default function ResiduosPage() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    )
+                    );
                   })
                 )}
               </TableBody>
@@ -368,5 +459,5 @@ export default function ResiduosPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
