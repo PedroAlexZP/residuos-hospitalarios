@@ -28,7 +28,7 @@ interface Incidencia {
   usuario: {
     nombre_completo: string
     departamento: string
-  }
+  } | null
   residuo?: {
     id: string
     tipo: string
@@ -106,7 +106,7 @@ export default function IncidenciasPage() {
     const matchesSearch =
       incidencia.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incidencia.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incidencia.usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (incidencia.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesUrgencia = filterUrgencia === "all" || incidencia.urgencia === filterUrgencia
     const matchesEstado = filterEstado === "all" || incidencia.estado === filterEstado

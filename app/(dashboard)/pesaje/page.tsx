@@ -23,11 +23,11 @@ interface Pesaje {
   peso: number
   fecha_hora: string
   codigo_escaneado: string
-  observaciones: string
+  observaciones: string | null
   responsable: {
     nombre_completo: string
-    departamento: string
-  }
+    departamento: string | null
+  } | null
   residuo: {
     id: string
     tipo: string
@@ -35,7 +35,7 @@ interface Pesaje {
     ubicacion: string
     usuario: {
       nombre_completo: string
-    }
+    } | null
   }
 }
 
@@ -111,7 +111,7 @@ export default function PesajePage() {
     const matchesSearch =
       pesaje.codigo_escaneado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pesaje.residuo.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pesaje.responsable.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (pesaje.responsable?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesTipo = filterTipo === "all" || pesaje.residuo.tipo === filterTipo
 
@@ -134,8 +134,8 @@ export default function PesajePage() {
           <div className="h-10 bg-muted animate-pulse rounded w-32" />
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={`pesaje-skeleton-${i}`} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>
@@ -344,12 +344,18 @@ export default function PesajePage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium">{pesaje.responsable.nombre_completo}</div>
-                            {pesaje.responsable.departamento && (
-                              <div className="text-sm text-muted-foreground">{pesaje.responsable.departamento}</div>
-                            )}
-                          </div>
+                          {pesaje.responsable ? (
+                            <div className="space-y-1">
+                              <div className="font-medium">{pesaje.responsable.nombre_completo}</div>
+                              {pesaje.responsable.departamento && (
+                                <div className="text-sm text-muted-foreground">{pesaje.responsable.departamento}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground italic">
+                              Responsable no disponible
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>{format(new Date(pesaje.fecha_hora), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
                         <TableCell>
