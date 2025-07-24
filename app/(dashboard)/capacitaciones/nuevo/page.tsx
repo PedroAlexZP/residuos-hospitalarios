@@ -1,97 +1,373 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CalendarIcon, Upload, Users, BookOpen, FileText, ArrowLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { getCurrentUser } from "@/lib/auth"
+import { format } from "date-fns"
+
+interface Usuario {
+  id: string
+  nombre_completo: string
+  departamento: string | null
+  rol: string
+}
 
 export default function NuevaCapacitacionPage() {
   const router = useRouter()
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [form, setForm] = useState({
     tema: "",
     descripcion: "",
     fecha: "",
-    responsable: "",
+    hora: "",
+    responsable_id: "",
+    material_pdf: null as File | null,
   })
   const [loading, setLoading] = useState(false)
+  const [loadingUsers, setLoadingUsers] = useState(true)
   const [errors, setErrors] = useState<{
     tema?: string
     descripcion?: string
     fecha?: string
-    responsable?: string
+    hora?: string
+    responsable_id?: string
   }>({})
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setErrors((prev) => ({ ...prev, [e.target.name]: undefined }))
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await getCurrentUser()
+        await loadUsuarios()
+      } catch (error) {
+        console.error("Error loading data:", error)
+      } finally {
+        setLoadingUsers(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  const loadUsuarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, nombre_completo, departamento, rol")
+        .eq("activo", true)
+        .in("rol", ["supervisor", "admin", "gestor_externo"])
+        .order("nombre_completo")
+
+      if (error) throw error
+      setUsuarios(data || [])
+    } catch (error) {
+      console.error("Error loading usuarios:", error)
+    }
+  }
+
+  const handleChange = (name: string, value: string) => {
+    setForm({ ...form, [name]: value })
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar que sea PDF
+      if (file.type !== "application/pdf") {
+        alert("Solo se permiten archivos PDF")
+        return
+      }
+      // Validar tamaño (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert("El archivo no puede ser mayor a 10MB")
+        return
+      }
+      setForm({ ...form, material_pdf: file })
+    }
   }
 
   const validateForm = () => {
     const newErrors: typeof errors = {}
-    if (!form.tema || form.tema.length < 3) newErrors.tema = "El tema es obligatorio."
-    if (!form.descripcion || form.descripcion.length < 5) newErrors.descripcion = "La descripción es obligatoria."
-    if (!form.fecha) newErrors.fecha = "La fecha es obligatoria."
-    if (!form.responsable || form.responsable.length < 3) newErrors.responsable = "El responsable es obligatorio."
+    
+    if (!form.tema || form.tema.length < 3) {
+      newErrors.tema = "El tema debe tener al menos 3 caracteres"
+    }
+    
+    if (!form.descripcion || form.descripcion.length < 10) {
+      newErrors.descripcion = "La descripción debe tener al menos 10 caracteres"
+    }
+    
+    if (!form.fecha) {
+      newErrors.fecha = "La fecha es obligatoria"
+    }
+    
+    if (!form.hora) {
+      newErrors.hora = "La hora es obligatoria"
+    }
+    
+    if (!form.responsable_id) {
+      newErrors.responsable_id = "Debe seleccionar un responsable"
+    }
+
+    // Validar que la fecha no sea en el pasado
+    if (form.fecha && form.hora) {
+      const fechaHora = new Date(`${form.fecha}T${form.hora}`)
+      if (fechaHora <= new Date()) {
+        newErrors.fecha = "La fecha y hora deben ser futuras"
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  const uploadFile = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `capacitaciones/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath)
+
+      return data.publicUrl
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      return null
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
+
     setLoading(true)
-    const { error } = await supabase
-      .from("capacitaciones")
-      .insert({
-        tema: form.tema,
-        descripcion: form.descripcion,
-        fecha: form.fecha,
-        responsable: form.responsable,
-      })
-    setLoading(false)
-    if (!error) {
+
+    try {
+      // Subir archivo PDF si existe
+      let materialUrl = null
+      if (form.material_pdf) {
+        materialUrl = await uploadFile(form.material_pdf)
+        if (!materialUrl) {
+          alert("Error al subir el archivo PDF")
+          setLoading(false)
+          return
+        }
+      }
+
+      // Combinar fecha y hora
+      const fechaHora = new Date(`${form.fecha}T${form.hora}`)
+
+      const { error } = await supabase
+        .from("capacitaciones")
+        .insert({
+          tema: form.tema,
+          descripcion: form.descripcion,
+          fecha: fechaHora.toISOString(),
+          responsable_id: form.responsable_id,
+          material_pdf: materialUrl,
+        })
+
+      if (error) throw error
+
       alert("Capacitación creada correctamente!")
       router.push("/capacitaciones")
-    } else {
-      alert("Error al crear capacitación")
+    } catch (error) {
+      console.error("Error creating capacitacion:", error)
+      alert("Error al crear la capacitación")
+    } finally {
+      setLoading(false)
     }
   }
 
+  if (loadingUsers) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 bg-muted animate-pulse rounded w-48" />
+        <div className="h-64 bg-muted animate-pulse rounded" />
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Nueva Capacitación</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div>
-          <Label htmlFor="tema">Tema</Label>
-          <Input id="tema" name="tema" value={form.tema} onChange={handleChange} required />
-          {errors.tema && <div className="text-red-500 text-sm mt-1">{errors.tema}</div>}
+          <h1 className="text-3xl font-bold tracking-tight">Nueva Capacitación</h1>
+          <p className="text-muted-foreground">Crear una nueva capacitación para el personal</p>
         </div>
-        <div>
-          <Label htmlFor="descripcion">Descripción</Label>
-          <Input id="descripcion" name="descripcion" value={form.descripcion} onChange={handleChange} required />
-          {errors.descripcion && <div className="text-red-500 text-sm mt-1">{errors.descripcion}</div>}
-        </div>
-        <div>
-          <Label htmlFor="fecha">Fecha</Label>
-          <Input id="fecha" name="fecha" type="date" value={form.fecha} onChange={handleChange} required />
-          {errors.fecha && <div className="text-red-500 text-sm mt-1">{errors.fecha}</div>}
-        </div>
-        <div>
-          <Label htmlFor="responsable">Responsable</Label>
-          <Input id="responsable" name="responsable" value={form.responsable} onChange={handleChange} required />
-          {errors.responsable && <div className="text-red-500 text-sm mt-1">{errors.responsable}</div>}
-        </div>
-        <div className="flex gap-2 mt-4">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Guardando..." : "Crear capacitación"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancelar
-          </Button>
-        </div>
-      </form>
+      </div>
+
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Información de la Capacitación
+          </CardTitle>
+          <CardDescription>
+            Complete los datos para programar una nueva capacitación
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Tema */}
+            <div className="space-y-2">
+              <Label htmlFor="tema">Tema *</Label>
+              <Input
+                id="tema"
+                placeholder="Ej: Manejo de Residuos Infecciosos"
+                value={form.tema}
+                onChange={(e) => handleChange("tema", e.target.value)}
+              />
+              {errors.tema && (
+                <Alert>
+                  <AlertDescription className="text-red-600">{errors.tema}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            {/* Descripción */}
+            <div className="space-y-2">
+              <Label htmlFor="descripcion">Descripción *</Label>
+              <Textarea
+                id="descripcion"
+                placeholder="Descripción detallada de los objetivos y contenido de la capacitación..."
+                value={form.descripcion}
+                onChange={(e) => handleChange("descripcion", e.target.value)}
+                rows={4}
+              />
+              {errors.descripcion && (
+                <Alert>
+                  <AlertDescription className="text-red-600">{errors.descripcion}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            {/* Fecha y Hora */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fecha">
+                  <CalendarIcon className="h-4 w-4 inline mr-1" />
+                  Fecha *
+                </Label>
+                <Input
+                  id="fecha"
+                  type="date"
+                  value={form.fecha}
+                  onChange={(e) => handleChange("fecha", e.target.value)}
+                  min={format(new Date(), "yyyy-MM-dd")}
+                />
+                {errors.fecha && (
+                  <Alert>
+                    <AlertDescription className="text-red-600">{errors.fecha}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="hora">Hora *</Label>
+                <Input
+                  id="hora"
+                  type="time"
+                  value={form.hora}
+                  onChange={(e) => handleChange("hora", e.target.value)}
+                />
+                {errors.hora && (
+                  <Alert>
+                    <AlertDescription className="text-red-600">{errors.hora}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+
+            {/* Responsable */}
+            <div className="space-y-2">
+              <Label htmlFor="responsable_id">
+                <Users className="h-4 w-4 inline mr-1" />
+                Responsable *
+              </Label>
+              <Select value={form.responsable_id} onValueChange={(value) => handleChange("responsable_id", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar responsable" />
+                </SelectTrigger>
+                <SelectContent>
+                  {usuarios.map((usuario) => (
+                    <SelectItem key={usuario.id} value={usuario.id}>
+                      <div className="flex flex-col">
+                        <span>{usuario.nombre_completo}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {usuario.departamento} - {usuario.rol}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.responsable_id && (
+                <Alert>
+                  <AlertDescription className="text-red-600">{errors.responsable_id}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            {/* Material PDF */}
+            <div className="space-y-2">
+              <Label htmlFor="material_pdf">
+                <FileText className="h-4 w-4 inline mr-1" />
+                Material de Apoyo (PDF)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="material_pdf"
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                />
+                <Upload className="h-4 w-4 text-muted-foreground" />
+              </div>
+              {form.material_pdf && (
+                <p className="text-sm text-muted-foreground">
+                  Archivo seleccionado: {form.material_pdf.name}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Formato PDF, máximo 10MB
+              </p>
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-3 pt-4">
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? "Creando..." : "Crear Capacitación"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => router.back()}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
