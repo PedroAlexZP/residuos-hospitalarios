@@ -13,7 +13,6 @@ import {
   ArrowLeft, 
   BookOpen, 
   Calendar, 
-  User, 
   FileText, 
   Users, 
   Edit, 

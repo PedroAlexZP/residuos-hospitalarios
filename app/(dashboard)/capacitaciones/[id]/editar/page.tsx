@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CalendarIcon, Upload, Users, BookOpen, FileText, ArrowLeft, Save } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 
@@ -43,7 +43,6 @@ export default function EditarCapacitacionPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { id } = params
-  const [user, setUser] = useState<User | null>(null)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [capacitacionOriginal, setCapacitacionOriginal] = useState<CapacitacionData | null>(null)
   const [form, setForm] = useState({
@@ -68,7 +67,6 @@ export default function EditarCapacitacionPage() {
     const loadData = async () => {
       try {
         const currentUser = await getCurrentUser()
-        setUser(currentUser)
         
         // Verificar permisos
         if (!["supervisor", "admin"].includes(currentUser?.rol || "")) {
