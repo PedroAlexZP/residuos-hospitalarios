@@ -25,7 +25,7 @@ interface Reporte {
   usuario: {
     nombre_completo: string
     departamento: string
-  }
+  } | null
 }
 
 const TIPOS_REPORTE = [
@@ -104,7 +104,7 @@ export default function ReportesPage() {
     const tipoInfo = getTipoReporteInfo(reporte.tipo)
     const matchesSearch =
       tipoInfo.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reporte.usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (reporte.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesTipo = filterTipo === "all" || reporte.tipo === filterTipo
     const matchesEstado = filterEstado === "all" || reporte.estado === filterEstado
@@ -120,8 +120,8 @@ export default function ReportesPage() {
           <div className="h-10 bg-muted animate-pulse rounded w-32" />
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+          {Array.from({ length: 5 }, () => crypto.randomUUID()).map((id) => (
+            <div key={id} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>
@@ -336,8 +336,10 @@ export default function ReportesPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium">{reporte.usuario.nombre_completo}</div>
-                            {reporte.usuario.departamento && (
+                            <div className="font-medium">
+                              {reporte.usuario?.nombre_completo || "Usuario no disponible"}
+                            </div>
+                            {reporte.usuario?.departamento && (
                               <div className="text-sm text-muted-foreground">{reporte.usuario.departamento}</div>
                             )}
                           </div>

@@ -122,8 +122,8 @@ export default function IncidenciasPage() {
           <div className="h-10 bg-muted animate-pulse rounded w-32" />
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+          {Array.from({ length: 5 }, () => crypto.randomUUID()).map((id) => (
+            <div key={id} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>
@@ -309,8 +309,10 @@ export default function IncidenciasPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium">{incidencia.usuario.nombre_completo}</div>
-                            {incidencia.usuario.departamento && (
+                            <div className="font-medium">
+                              {incidencia.usuario?.nombre_completo || "Usuario no disponible"}
+                            </div>
+                            {incidencia.usuario?.departamento && (
                               <div className="text-sm text-muted-foreground">{incidencia.usuario.departamento}</div>
                             )}
                           </div>
