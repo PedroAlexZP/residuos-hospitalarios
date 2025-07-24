@@ -57,6 +57,7 @@ interface Residuo {
   fecha_generacion: string;
   estado: string;
   created_at: string;
+  usuario_id?: string;
   usuario: {
     nombre_completo: string;
     departamento: string | null;
@@ -97,12 +98,52 @@ export default function ResiduosPage() {
 
   const loadResiduos = async (user: User) => {
     try {
+      console.log("Loading residuos for user:", user.rol);
+      
+      // First attempt: Use our new RPC function that bypasses RLS
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_residuos_with_users');
+
+      if (!rpcError && rpcData) {
+        console.log("RPC get_residuos_with_users successful:", rpcData.length, "residuos");
+        
+        // Transform RPC data to expected format
+        const transformedData = rpcData.map((residuo: any) => ({
+          id: residuo.id,
+          tipo: residuo.tipo,
+          cantidad: residuo.cantidad,
+          ubicacion: residuo.ubicacion,
+          estado: residuo.estado,
+          fecha_generacion: residuo.fecha_generacion,
+          usuario_id: residuo.usuario_id,
+          created_at: residuo.created_at,
+          usuario: residuo.usuario_nombre ? {
+            nombre_completo: residuo.usuario_nombre,
+            departamento: residuo.usuario_departamento
+          } : null,
+          etiquetas: [] // We'll load these separately if needed
+        }));
+        
+        // Filter by user if needed
+        const filteredData = !["supervisor", "admin"].includes(user.rol) 
+          ? transformedData.filter((r: any) => r.usuario_id === user.id)
+          : transformedData;
+        
+        console.log("Residuos after filtering:", filteredData.length);
+        console.log("Residuos with users:", filteredData.filter((r: any) => r.usuario).length);
+        setResiduos(filteredData);
+        return;
+      }
+
+      console.error("RPC get_residuos_with_users failed:", rpcError);
+
+      // Fallback: original query with JOIN
       let query = supabase
         .from("residuos")
         .select(
           `
           *,
-          usuario:users!residuos_usuario_id_fkey(nombre_completo, departamento),
+          usuario:users(nombre_completo, departamento),
           etiquetas(id, codigo_qr, tipo_etiqueta)
         `
         )
@@ -116,16 +157,44 @@ export default function ResiduosPage() {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error loading residuos:", error);
-        throw error;
+        console.error("Error loading residuos with JOIN:", error);
+        
+        // Second fallback: cargar residuos sin join si falla
+        console.log("Intentando segundo fallback sin join...");
+        const { data: residuosData, error: residuosError } = await supabase
+          .from("residuos")
+          .select("*")
+          .order("created_at", { ascending: false });
+          
+        if (residuosError) {
+          throw residuosError;
+        }
+        
+        // Cargar usuarios por separado
+        const { data: usuariosData } = await supabase
+          .from("users")
+          .select("id, nombre_completo, departamento");
+          
+        // Mapear usuarios a residuos
+        const residuosWithUsers = residuosData?.map((residuo: any) => ({
+          ...residuo,
+          usuario: usuariosData?.find((u: any) => u.id === residuo.usuario_id) || null,
+          etiquetas: []
+        })) || [];
+        
+        console.log("Second fallback - Residuos cargados:", residuosWithUsers.length);
+        console.log("Second fallback - Residuos with users:", residuosWithUsers.filter((r: any) => r.usuario).length);
+        setResiduos(residuosWithUsers);
+        return;
       }
       
-      console.log("Residuos cargados:", data?.length || 0);
-      console.log("Residuos sin usuario:", data?.filter(r => !r.usuario).length || 0);
+      console.log("JOIN query successful - Residuos cargados:", data?.length || 0);
+      console.log("JOIN query - Residuos sin usuario:", data?.filter((r: any) => !r.usuario).length || 0);
       
       setResiduos(data || []);
     } catch (error) {
       console.error("Error loading residuos:", error);
+      setResiduos([]);
     }
   };
 
@@ -178,7 +247,7 @@ export default function ResiduosPage() {
         </div>
         <div className="space-y-4">
           {Array.from({ length: 5 }, (_, i) => (
-            <div key={`residuo-skeleton-loading-${i}`} className="h-16 bg-muted animate-pulse rounded" />
+            <div key={`residuo-skeleton-${i}`} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>

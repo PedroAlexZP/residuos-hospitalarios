@@ -31,7 +31,7 @@ interface Etiqueta {
     usuario: {
       nombre_completo: string
       departamento: string
-    }
+    } | null
   }
 }
 
@@ -92,7 +92,7 @@ export default function EtiquetasPage() {
     const matchesSearch =
       etiqueta.codigo_qr.toLowerCase().includes(searchTerm.toLowerCase()) ||
       etiqueta.residuo.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      etiqueta.residuo.usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (etiqueta.residuo?.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesTipo = filterTipo === "all" || etiqueta.tipo_etiqueta === filterTipo
 
@@ -286,8 +286,8 @@ export default function EtiquetasPage() {
                         <TableCell>{etiqueta.residuo.ubicacion}</TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium">{etiqueta.residuo.usuario.nombre_completo}</div>
-                            {etiqueta.residuo.usuario.departamento && (
+                            <div className="font-medium">{etiqueta.residuo?.usuario?.nombre_completo || "Sin asignar"}</div>
+                            {etiqueta.residuo?.usuario?.departamento && (
                               <div className="text-sm text-muted-foreground">
                                 {etiqueta.residuo.usuario.departamento}
                               </div>

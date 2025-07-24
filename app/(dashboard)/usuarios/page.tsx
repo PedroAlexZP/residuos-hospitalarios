@@ -23,7 +23,7 @@ import {
   Building
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User as AuthUser } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 
 interface Usuario {
@@ -46,12 +46,11 @@ const rolesConfig = {
 
 export default function UsuariosPage() {
   const { toast } = useToast()
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterRol, setFilterRol] = useState<string>("todos")
-  const [filterEstado, setFilterEstado] = useState<string>("todos")
+  const [filterRol, setFilterRol] = useState("todos")
+  const [filterEstado, setFilterEstado] = useState("todos")
 
   useEffect(() => {
     loadData()
@@ -59,22 +58,7 @@ export default function UsuariosPage() {
 
   const loadData = async () => {
     try {
-      const user = await getCurrentUser()
-      setCurrentUser(user)
-      
-      console.log("Load data - Current user:", user)
-      
-      if (!user || !["admin", "supervisor"].includes(user.rol)) {
-        console.log("User lacks permissions:", user?.rol)
-        toast({
-          title: "Sin permisos", 
-          description: "No tiene permisos para ver la lista de usuarios",
-          variant: "destructive",
-        })
-        return
-      }
-
-      console.log("User has permissions, fetching usuarios...")
+      setLoading(true)
       await fetchUsuarios()
     } catch (error) {
       console.error("Error loading data:", error)
@@ -88,137 +72,47 @@ export default function UsuariosPage() {
     }
   }
 
-  const tryRpcQuery = async () => {
-    try {
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('debug_user_access')
-      
-      if (!rpcError && rpcData && rpcData.length > 0) {
-        console.log("RPC call successful:", rpcData)
-        // Mapear los datos del RPC a la estructura esperada
-        const mappedUsers = rpcData.map((user: any) => ({
-          id: user.user_id,
-          nombre_completo: user.nombre,
-          email: `${user.nombre.toLowerCase().replace(/\s+/g, '.')}@hospital.com`,
-          rol: user.rol,
-          departamento: "Departamento",
-          activo: true,
-          created_at: new Date().toISOString()
-        }))
-        return mappedUsers
-      }
-    } catch (rpcError) {
-      console.log("RPC call failed:", rpcError)
-    }
-    return null
-  }
-
-  const trySimpleQuery = async () => {
-    try {
-      console.log("Trying simplified query...")
-      const { data: simpleData, error: simpleError } = await supabase
-        .from("users")
-        .select("id, nombre_completo, email, rol, departamento, activo, created_at")
-        .limit(50)
-      
-      if (!simpleError && simpleData) {
-        console.log("Simple query worked:", simpleData)
-        const mappedData = simpleData.map((user: any) => ({
-          id: user.id,
-          nombre_completo: user.nombre_completo,
-          email: user.email,
-          rol: user.rol,
-          departamento: user.departamento || "Sin asignar",
-          activo: user.activo !== undefined ? user.activo : true,
-          created_at: user.created_at || new Date().toISOString()
-        }))
-        return mappedData
-      }
-    } catch (error) {
-      console.log("Simple query failed:", error)
-    }
-    return null
-  }
-
-  const createTestData = () => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Creating test data for development...")
-      return [
-        {
-          id: "test-1",
-          nombre_completo: "Usuario de Prueba",
-          email: "test@hospital.com",
-          rol: "admin" as const,
-          departamento: "Administración",
-          activo: true,
-          created_at: new Date().toISOString()
-        }
-      ]
-    }
-    return []
-  }
-
   const fetchUsuarios = async () => {
     try {
-      console.log("Fetching usuarios...")
+      console.log("=== FETCHING USUARIOS ===")
       
       const currentUser = await getCurrentUser()
-      console.log("Current user for fetch:", currentUser)
-      
-      // Intentar RPC call para admins
-      if (currentUser?.rol === "admin") {
-        console.log("Admin user, trying RPC call first...")
-        const rpcResult = await tryRpcQuery()
-        if (rpcResult) {
-          setUsuarios(rpcResult)
-          return
-        }
+      if (!currentUser) {
+        throw new Error("Usuario no autenticado")
       }
+
+      // Try RPC function first
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_all_users_public')
       
-      // Consulta directa estándar
+      if (!rpcError && rpcData && rpcData.length > 0) {
+        console.log("✅ RPC successful:", rpcData.length, "users")
+        setUsuarios(rpcData)
+        return
+      }
+
+      // Try direct query
       const { data, error } = await supabase
         .from("users")
         .select("*")
         .order("created_at", { ascending: false })
-
-      console.log("Direct query response:", { data, error })
       
-      if (error) {
-        console.error("Supabase error details:", {
-          message: error.message,
-          code: error.code
-        })
-        
-        // Intentar consulta simplificada
-        const simpleResult = await trySimpleQuery()
-        if (simpleResult) {
-          setUsuarios(simpleResult)
-          return
-        }
-        
-        throw new Error(`Error consultando usuarios: ${error.message}`)
+      if (!error && data) {
+        console.log("✅ Direct query successful:", data.length, "users")
+        setUsuarios(data)
+        return
       }
       
-      console.log("Setting usuarios from direct query:", data)
-      setUsuarios(data || [])
-      
-      if (data && data.length > 0) {
-        console.log("Sample user structure:", data[0])
-      } else {
-        console.log("No users returned from query")
-      }
+      throw new Error("All queries failed")
       
     } catch (error) {
-      console.error("Error fetching usuarios:", error)
+      console.error("💥 Error:", error)
       toast({
-        title: "Error",
-        description: `No se pudo cargar la lista de usuarios: ${(error as Error).message}`,
+        title: "Error al cargar usuarios",
+        description: "No se pudieron cargar los usuarios",
         variant: "destructive",
       })
-      
-      // Fallback con datos de prueba
-      const testData = createTestData()
-      setUsuarios(testData)
+      setUsuarios([])
     }
   }
 
@@ -231,7 +125,7 @@ export default function UsuariosPage() {
 
       if (error) throw error
 
-      setUsuarios(usuarios.map(u => 
+      setUsuarios(usuarios.map((u: Usuario) => 
         u.id === usuarioId ? { ...u, activo: nuevoEstado } : u
       ))
 
@@ -249,7 +143,7 @@ export default function UsuariosPage() {
     }
   }
 
-  const filteredUsuarios = usuarios.filter(usuario => {
+  const filteredUsuarios = usuarios.filter((usuario: Usuario) => {
     const matchesSearch = usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          usuario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (usuario.departamento?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
@@ -262,291 +156,316 @@ export default function UsuariosPage() {
     return matchesSearch && matchesRol && matchesEstado
   })
 
-  const getEstadisticas = () => {
-    const total = usuarios.length
-    const activos = usuarios.filter(u => u.activo).length
-    const inactivos = total - activos
-    const porRol = Object.keys(rolesConfig).reduce((acc, rol) => {
-      acc[rol] = usuarios.filter(u => u.rol === rol).length
+  const stats = {
+    total: usuarios.length,
+    activos: usuarios.filter((u: Usuario) => u.activo).length,
+    porRol: Object.keys(rolesConfig).reduce((acc, rol) => {
+      acc[rol] = usuarios.filter((u: Usuario) => u.rol === rol).length
       return acc
     }, {} as Record<string, number>)
+  }
 
-    return { total, activos, inactivos, porRol }
+  const getRolIcon = (rol: string) => {
+    const config = rolesConfig[rol as keyof typeof rolesConfig]
+    if (!config) return UserCheck
+    return config.icon
+  }
+
+  const getRolColor = (rol: string) => {
+    const config = rolesConfig[rol as keyof typeof rolesConfig]
+    if (!config) return "bg-gray-100 text-gray-800 border-gray-300"
+    return config.color
+  }
+
+  const getRolLabel = (rol: string) => {
+    const config = rolesConfig[rol as keyof typeof rolesConfig]
+    if (!config) return rol
+    return config.label
   }
 
   if (loading) {
+    const skeletonCards = Array.from({ length: 4 }, (_, i) => `card-${Date.now()}-${i}`)
+    const skeletonRows = Array.from({ length: 5 }, (_, i) => `row-${Date.now()}-${i}`)
+    
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="h-9 w-9 bg-muted animate-pulse rounded" />
-          <div className="space-y-2">
-            <div className="h-8 bg-muted animate-pulse rounded w-64" />
-            <div className="h-4 bg-muted animate-pulse rounded w-80" />
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={`skeleton-stat-${i + 1}`} className="h-24 bg-muted animate-pulse rounded" />
+      <div className="p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          {skeletonCards.map((key) => (
+            <Card key={key}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-16 animate-pulse mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-        <div className="h-96 bg-muted animate-pulse rounded" />
+        <Card>
+          <CardHeader>
+            <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {skeletonRows.map((key) => (
+                <div key={key} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
-
-  if (!currentUser || !["admin", "supervisor"].includes(currentUser.rol)) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <UserX className="h-16 w-16 text-muted-foreground" />
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">Sin permisos</h2>
-          <p className="text-muted-foreground">No tiene permisos para ver la gestión de usuarios</p>
-        </div>
-      </div>
-    )
-  }
-
-  const stats = getEstadisticas()
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Users className="h-8 w-8 text-primary" />
-            Gestión de Usuarios
-          </h1>
-          <p className="text-muted-foreground">
-            Administrar usuarios del sistema de residuos hospitalarios
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
+          <p className="text-gray-600">Administra los usuarios del sistema</p>
         </div>
+        <Button>
+          <Users className="mr-2 h-4 w-4" />
+          Nuevo Usuario
+        </Button>
       </div>
 
-      {/* Estadísticas */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Total Usuarios</CardTitle>
+            <Users className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              Usuarios registrados
-            </p>
+            <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+            <p className="text-xs text-gray-500">Registrados en el sistema</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Activos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium text-gray-600">Usuarios Activos</CardTitle>
+            <UserCheck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.activos}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.total > 0 ? Math.round((stats.activos / stats.total) * 100) : 0}% del total
+            <p className="text-xs text-gray-500">
+              {stats.total > 0 ? `${Math.round((stats.activos / stats.total) * 100)}% del total` : "0% del total"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Inactivos</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.inactivos}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.total > 0 ? Math.round((stats.inactivos / stats.total) * 100) : 0}% del total
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Administradores</CardTitle>
             <Crown className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">{stats.porRol.admin || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Usuarios con rol admin
-            </p>
+            <p className="text-xs text-gray-500">Con acceso completo</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Supervisores</CardTitle>
+            <Shield className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.porRol.supervisor || 0}</div>
+            <p className="text-xs text-gray-500">Gestión operativa</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filtros y Búsqueda */}
+      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros
+            Filtros y Búsqueda
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Buscar por nombre, email o departamento..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-10"
                 />
               </div>
             </div>
             
-            <Select value={filterRol} onValueChange={setFilterRol}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filtrar por rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los roles</SelectItem>
-                {Object.entries(rolesConfig).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>
-                    <div className="flex items-center gap-2">
-                      <config.icon className="h-4 w-4" />
+            <div className="lg:w-48">
+              <Select value={filterRol} onValueChange={setFilterRol}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los roles</SelectItem>
+                  {Object.entries(rolesConfig).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
                       {config.label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Select value={filterEstado} onValueChange={setFilterEstado}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filtrar por estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los estados</SelectItem>
-                <SelectItem value="activo">Solo activos</SelectItem>
-                <SelectItem value="inactivo">Solo inactivos</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="lg:w-48">
+              <Select value={filterEstado} onValueChange={setFilterEstado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los estados</SelectItem>
+                  <SelectItem value="activo">Solo activos</SelectItem>
+                  <SelectItem value="inactivo">Solo inactivos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de Usuarios */}
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Lista de Usuarios
-          </CardTitle>
+          <CardTitle>Usuarios del Sistema</CardTitle>
           <CardDescription>
-            {filteredUsuarios.length} usuario{filteredUsuarios.length !== 1 ? 's' : ''} 
-            {searchTerm || filterRol !== "todos" || filterEstado !== "todos" ? ' (filtrados)' : ''}
+            Mostrando {filteredUsuarios.length} de {usuarios.length} usuarios
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredUsuarios.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Departamento</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha Registro</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsuarios.length === 0 ? (
                   <TableRow>
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Registro</TableHead>
-                    {currentUser.rol === "admin" && <TableHead>Acciones</TableHead>}
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Users className="h-8 w-8" />
+                        <p>No se encontraron usuarios</p>
+                        <p className="text-sm">
+                          {usuarios.length === 0 
+                            ? "No hay usuarios registrados en el sistema"
+                            : "Prueba con otros filtros de búsqueda"
+                          }
+                        </p>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsuarios.map((usuario) => {
-                    const rolConfig = rolesConfig[usuario.rol]
-                    const IconoRol = rolConfig.icon
-                    
+                ) : (
+                  filteredUsuarios.map((usuario) => {
+                    const RolIcon = getRolIcon(usuario.rol)
                     return (
                       <TableRow key={usuario.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarFallback>
-                                {usuario.nombre_completo.split(' ').map(n => n[0]).join('')}
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {usuario.nombre_completo
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{usuario.nombre_completo}</p>
-                              <p className="text-sm text-muted-foreground">{usuario.email}</p>
+                              <div className="font-medium text-gray-900">
+                                {usuario.nombre_completo}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {usuario.email}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={rolConfig.color}>
-                            <IconoRol className="h-3 w-3 mr-1" />
-                            {rolConfig.label}
+                          <Badge 
+                            variant="outline" 
+                            className={getRolColor(usuario.rol)}
+                          >
+                            <RolIcon className="mr-1 h-3 w-3" />
+                            {getRolLabel(usuario.rol)}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">
-                            {usuario.departamento || "No asignado"}
+                          <span className="text-sm text-gray-900">
+                            {usuario.departamento || "Sin asignar"}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={usuario.activo ? "default" : "secondary"}>
+                          <Badge 
+                            variant={usuario.activo ? "default" : "secondary"}
+                            className={usuario.activo 
+                              ? "bg-green-100 text-green-800 border-green-300" 
+                              : "bg-red-100 text-red-800 border-red-300"
+                            }
+                          >
                             {usuario.activo ? (
-                              <>
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Activo
-                              </>
+                              <CheckCircle className="mr-1 h-3 w-3" />
                             ) : (
-                              <>
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Inactivo
-                              </>
+                              <XCircle className="mr-1 h-3 w-3" />
                             )}
+                            {usuario.activo ? "Activo" : "Inactivo"}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(usuario.created_at).toLocaleDateString()}
+                          <span className="text-sm text-gray-600">
+                            {new Date(usuario.created_at).toLocaleDateString("es-ES", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric"
+                            })}
                           </span>
                         </TableCell>
-                        {currentUser.rol === "admin" && (
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant={usuario.activo ? "destructive" : "default"}
-                                size="sm"
-                                onClick={() => toggleEstadoUsuario(usuario.id, !usuario.activo)}
-                              >
-                                {usuario.activo ? (
-                                  <UserX className="h-3 w-3" />
-                                ) : (
-                                  <UserCheck className="h-3 w-3" />
-                                )}
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleEstadoUsuario(usuario.id, !usuario.activo)}
+                            >
+                              {usuario.activo ? (
+                                <UserX className="h-4 w-4" />
+                              ) : (
+                                <UserCheck className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No se encontraron usuarios</h3>
-              <p>
-                {searchTerm || filterRol !== "todos" || filterEstado !== "todos"
-                  ? "No hay usuarios que coincidan con los filtros aplicados"
-                  : "No hay usuarios registrados en el sistema"}
-              </p>
-            </div>
-          )}
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
   )
-} 
+}

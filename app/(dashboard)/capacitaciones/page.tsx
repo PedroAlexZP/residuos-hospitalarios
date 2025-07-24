@@ -26,7 +26,7 @@ interface Capacitacion {
   responsable: {
     nombre_completo: string
     departamento: string
-  }
+  } | null
   capacitacion_participantes: {
     id: string
     asistio: boolean
@@ -65,11 +65,43 @@ export default function CapacitacionesPage() {
 
   const loadCapacitaciones = async (user: User) => {
     try {
+      console.log("Loading capacitaciones for user:", user.rol);
+      
+      // First attempt: Use our new RPC function that bypasses RLS
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_capacitaciones_with_responsables');
+
+      if (!rpcError && rpcData) {
+        console.log("RPC get_capacitaciones_with_responsables successful:", rpcData.length, "capacitaciones");
+        
+        // Transform RPC data to expected format
+        const transformedData = rpcData.map((capacitacion: any) => ({
+          id: capacitacion.id,
+          tema: capacitacion.tema,
+          fecha: capacitacion.fecha,
+          descripcion: capacitacion.descripcion,
+          material_pdf: capacitacion.material_pdf,
+          created_at: capacitacion.created_at,
+          responsable: capacitacion.responsable_nombre ? {
+            nombre_completo: capacitacion.responsable_nombre,
+            departamento: capacitacion.responsable_departamento
+          } : null,
+          capacitacion_participantes: [] // We'll load these separately if needed
+        }));
+        
+        console.log("Capacitaciones with responsables:", transformedData.filter((c: any) => c.responsable).length);
+        setCapacitaciones(transformedData);
+        return;
+      }
+
+      console.error("RPC get_capacitaciones_with_responsables failed:", rpcError);
+
+      // Fallback: original query with JOIN
       const query = supabase
         .from("capacitaciones")
         .select(`
           *,
-          responsable:users!capacitaciones_responsable_id_fkey(nombre_completo, departamento),
+          responsable:users(nombre_completo, departamento),
           capacitacion_participantes(
             id,
             asistio,
@@ -81,10 +113,43 @@ export default function CapacitacionesPage() {
 
       const { data, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error("Error loading capacitaciones with JOIN:", error);
+        
+        // Second fallback: cargar capacitaciones sin join
+        console.log("Intentando segundo fallback sin join...");
+        const { data: capacitacionesData, error: capacitacionesError } = await supabase
+          .from("capacitaciones")
+          .select("*")
+          .order("fecha", { ascending: false });
+          
+        if (capacitacionesError) {
+          throw capacitacionesError;
+        }
+        
+        // Cargar usuarios por separado
+        const { data: usuariosData } = await supabase
+          .from("users")
+          .select("id, nombre_completo, departamento");
+          
+        // Mapear responsables a capacitaciones
+        const capacitacionesWithUsers = capacitacionesData?.map(capacitacion => ({
+          ...capacitacion,
+          responsable: usuariosData?.find(u => u.id === capacitacion.responsable_id) || null,
+          capacitacion_participantes: []
+        })) || [];
+        
+        console.log("Second fallback - Capacitaciones cargadas:", capacitacionesWithUsers.length);
+        console.log("Second fallback - Capacitaciones with responsables:", capacitacionesWithUsers.filter((c: any) => c.responsable).length);
+        setCapacitaciones(capacitacionesWithUsers);
+        return;
+      }
+      
+      console.log("JOIN query successful - Capacitaciones cargadas:", data?.length || 0);
       setCapacitaciones(data || [])
     } catch (error) {
       console.error("Error loading capacitaciones:", error)
+      setCapacitaciones([]);
     }
   }
 
@@ -93,6 +158,24 @@ export default function CapacitacionesPage() {
     const asistieron = capacitacion.capacitacion_participantes.filter((p) => p.asistio).length
     const porcentaje = total > 0 ? (asistieron / total) * 100 : 0
     return { total, asistieron, porcentaje }
+  }
+
+  const getAsistenciaBadgeVariant = (porcentaje: number) => {
+    if (porcentaje >= 80) return "default"
+    if (porcentaje >= 60) return "secondary"
+    return "destructive"
+  }
+
+  const getCalificacionBadgeVariant = (promedio: number) => {
+    if (promedio >= 80) return "default"
+    if (promedio >= 60) return "secondary"
+    return "destructive"
+  }
+
+  const getCalificacionLabel = (promedio: number) => {
+    if (promedio >= 80) return "Excelente"
+    if (promedio >= 60) return "Bueno"
+    return "Mejorar"
   }
 
   const getCalificacionPromedio = (capacitacion: Capacitacion) => {
@@ -107,7 +190,7 @@ export default function CapacitacionesPage() {
   const filteredCapacitaciones = capacitaciones.filter((capacitacion) => {
     const matchesSearch =
       capacitacion.tema.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      capacitacion.responsable.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (capacitacion.responsable?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     let matchesFecha = true
     if (filterFecha !== "all") {
@@ -326,8 +409,8 @@ export default function CapacitacionesPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium">{capacitacion.responsable.nombre_completo}</div>
-                            {capacitacion.responsable.departamento && (
+                            <div className="font-medium">{capacitacion.responsable?.nombre_completo || "Sin asignar"}</div>
+                            {capacitacion.responsable?.departamento && (
                               <div className="text-sm text-muted-foreground">
                                 {capacitacion.responsable.departamento}
                               </div>
@@ -360,13 +443,7 @@ export default function CapacitacionesPage() {
                                 {asistenciaStats.asistieron}/{asistenciaStats.total}
                               </span>
                               <Badge
-                                variant={
-                                  asistenciaStats.porcentaje >= 80
-                                    ? "default"
-                                    : asistenciaStats.porcentaje >= 60
-                                      ? "secondary"
-                                      : "destructive"
-                                }
+                                variant={getAsistenciaBadgeVariant(asistenciaStats.porcentaje)}
                                 className="text-xs"
                               >
                                 {asistenciaStats.porcentaje.toFixed(0)}%
@@ -380,20 +457,10 @@ export default function CapacitacionesPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{calificacionPromedio.toFixed(1)}</span>
                               <Badge
-                                variant={
-                                  calificacionPromedio >= 80
-                                    ? "default"
-                                    : calificacionPromedio >= 60
-                                      ? "secondary"
-                                      : "destructive"
-                                }
+                                variant={getCalificacionBadgeVariant(calificacionPromedio)}
                                 className="text-xs"
                               >
-                                {calificacionPromedio >= 80
-                                  ? "Excelente"
-                                  : calificacionPromedio >= 60
-                                    ? "Bueno"
-                                    : "Mejorar"}
+                                {getCalificacionLabel(calificacionPromedio)}
                               </Badge>
                             </div>
                           ) : (
@@ -422,15 +489,6 @@ export default function CapacitacionesPage() {
                                   Ver detalles
                                 </Link>
                               </DropdownMenuItem>
-                              {/* Elimina la declaración de 'user' si no se usa */}
-                              {/* {user && ["supervisor", "admin"].includes(user.rol) && (
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/capacitaciones/${capacitacion.id}/participantes`}>
-                                    <Users className="mr-2 h-4 w-4" />
-                                    Gestionar participantes
-                                  </Link>
-                                </DropdownMenuItem>
-                              )} */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

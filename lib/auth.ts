@@ -175,3 +175,77 @@ export const isCurrentUserAdmin = async (): Promise<boolean> => {
   const user = await getCurrentUser()
   return user?.rol === 'admin' || false
 }
+
+// Function to get all users with fallback strategies
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    console.log("Attempting to get all users...");
+    
+    // First attempt: Use our new RPC function
+    const { data: rpcData, error: rpcError } = await supabase
+      .rpc('get_all_users_public');
+
+    if (!rpcError && rpcData) {
+      console.log("RPC get_all_users_public successful:", rpcData.length, "users");
+      return rpcData.map((user: any) => ({
+        id: user.id,
+        nombre_completo: user.nombre_completo,
+        email: user.email,
+        rol: user.rol,
+        departamento: user.departamento || "Sin asignar",
+        activo: user.activo
+      }));
+    }
+
+    console.error("RPC get_all_users_public failed:", rpcError);
+
+    // Second attempt: direct query
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("activo", true)
+      .order("nombre_completo");
+
+    if (!error && data) {
+      console.log("Direct query successful:", data.length, "users");
+      return data;
+    }
+
+    console.error("Direct query failed:", error);
+
+    // Third attempt: try with RPC function from previous implementation
+    const { data: oldRpcData, error: oldRpcError } = await supabase
+      .rpc('get_all_users_for_admin');
+
+    if (!oldRpcError && oldRpcData) {
+      console.log("Old RPC query successful:", oldRpcData.length, "users");
+      return oldRpcData.map((user: any) => ({
+        id: user.user_id || user.id,
+        nombre_completo: user.nombre || user.nombre_completo,
+        email: user.email || `${user.nombre?.toLowerCase().replace(/\s+/g, '.')}@hospital.com`,
+        rol: user.rol,
+        departamento: user.departamento || "Sin asignar",
+        activo: true
+      }));
+    }
+
+    console.error("Old RPC query failed:", oldRpcError);
+    
+    // Return empty array if all fails
+    return [];
+  } catch (error) {
+    console.error("Error getting all users:", error);
+    return [];
+  }
+}
+
+// Function to get users for specific roles
+export const getUsersByRoles = async (roles: string[]): Promise<User[]> => {
+  try {
+    const allUsers = await getAllUsers();
+    return allUsers.filter(user => roles.includes(user.rol));
+  } catch (error) {
+    console.error("Error getting users by roles:", error);
+    return [];
+  }
+}

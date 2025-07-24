@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CalendarIcon, Upload, Users, BookOpen, FileText, ArrowLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, getUsersByRoles, type User } from "@/lib/auth"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 
@@ -61,6 +61,28 @@ export default function NuevaCapacitacionPage() {
 
   const loadUsuarios = async () => {
     try {
+      console.log("Cargando usuarios para capacitaciones...");
+      
+      // Usar la nueva función de auth
+      const allUsers = await getUsersByRoles(["supervisor", "admin", "gestor_externo"]);
+      
+      if (allUsers.length > 0) {
+        console.log("Usuarios cargados con nueva función:", allUsers.length);
+        console.log("Usuarios disponibles:", allUsers.map(u => u.nombre_completo).join(", "));
+        
+        // Mapear a la interface local
+        const mappedUsers: Usuario[] = allUsers.map(user => ({
+          id: user.id,
+          nombre_completo: user.nombre_completo,
+          departamento: user.departamento || null,
+          rol: user.rol
+        }));
+        
+        setUsuarios(mappedUsers);
+        return;
+      }
+      
+      // Fallback original
       const { data, error } = await supabase
         .from("users")
         .select("id, nombre_completo, departamento, rol")
@@ -68,7 +90,28 @@ export default function NuevaCapacitacionPage() {
         .in("rol", ["supervisor", "admin", "gestor_externo"])
         .order("nombre_completo")
 
-      if (error) throw error
+      if (error) {
+        console.error("Error loading usuarios:", error);
+        
+        // Segundo fallback: intentar cargar todos los usuarios activos
+        console.log("Intentando segundo fallback - cargar todos los usuarios activos...");
+        const { data: allUsers, error: allUsersError } = await supabase
+          .from("users")
+          .select("id, nombre_completo, departamento, rol")
+          .eq("activo", true)
+          .order("nombre_completo");
+          
+        if (allUsersError) {
+          throw allUsersError;
+        }
+        
+        console.log("Usuarios cargados (segundo fallback):", allUsers?.length || 0);
+        setUsuarios(allUsers || []);
+        return;
+      }
+      
+      console.log("Usuarios cargados (fallback directo):", data?.length || 0);
+      console.log("Usuarios disponibles:", data?.map(u => u.nombre_completo).join(", "));
       setUsuarios(data || [])
     } catch (error) {
       console.error("Error loading usuarios:", error)
@@ -77,6 +120,7 @@ export default function NuevaCapacitacionPage() {
         description: "No se pudieron cargar los responsables disponibles",
         variant: "destructive",
       })
+      setUsuarios([]);
     }
   }
 

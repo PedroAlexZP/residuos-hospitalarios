@@ -37,7 +37,7 @@ interface Entrega {
   usuario: {
     nombre_completo: string
     departamento: string
-  }
+  } | null
   gestor_externo: {
     id: string
     nombre: string
@@ -82,6 +82,49 @@ export default function EntregasPage() {
 
   const loadEntregas = async (user: User) => {
     try {
+      console.log("Loading entregas for user:", user.rol);
+      
+      // First attempt: Use our new RPC function that bypasses RLS
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_entregas_with_users');
+
+      if (!rpcError && rpcData) {
+        console.log("RPC get_entregas_with_users successful:", rpcData.length, "entregas");
+        
+        // Transform RPC data to expected format
+        const transformedData = rpcData.map((entrega: any) => ({
+          id: entrega.id,
+          fecha_hora: entrega.fecha_hora,
+          certificado_pdf: entrega.certificado_pdf,
+          estado: entrega.estado,
+          numero_seguimiento: entrega.numero_seguimiento,
+          usuario_id: entrega.usuario_id,
+          gestor_externo_id: entrega.gestor_externo_id,
+          usuario: entrega.usuario_nombre ? {
+            nombre_completo: entrega.usuario_nombre,
+            departamento: entrega.usuario_departamento
+          } : null,
+          gestor_externo: null, // We'll need to load this separately if needed
+          entrega_residuos: [] // We'll load these separately if needed
+        }));
+        
+        // Filter by user if needed
+        let filteredData = transformedData;
+        if (user.rol === "gestor_externo") {
+          filteredData = transformedData; // Show all for external managers
+        } else if (!["supervisor", "admin"].includes(user.rol)) {
+          filteredData = transformedData.filter((e: any) => e.usuario_id === user.id);
+        }
+        
+        console.log("Entregas after filtering:", filteredData.length);
+        console.log("Entregas with users:", filteredData.filter((e: any) => e.usuario).length);
+        setEntregas(filteredData);
+        return;
+      }
+
+      console.error("RPC get_entregas_with_users failed:", rpcError);
+
+      // Fallback: original query with JOIN
       let query = supabase
         .from("entregas")
         .select(`
@@ -104,10 +147,47 @@ export default function EntregasPage() {
 
       const { data, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error("Error loading entregas with JOIN:", error);
+        
+        // Fallback: cargar entregas sin join
+        console.log("Intentando fallback sin join...");
+        const { data: entregasData, error: entregasError } = await supabase
+          .from("entregas")
+          .select("*")
+          .order("fecha_hora", { ascending: false });
+          
+        if (entregasError) {
+          throw entregasError;
+        }
+        
+        // Cargar usuarios y gestores por separado
+        const { data: usuariosData } = await supabase
+          .from("users")
+          .select("id, nombre_completo, departamento");
+          
+        const { data: gestoresData } = await supabase
+          .from("gestores_externos")
+          .select("id, nombre, licencia, contacto");
+        
+        // Transform RPC data to expected format
+        const entregasWithUsers = entregasData?.map(entrega => ({
+          ...entrega,
+          usuario: usuariosData?.find(u => u.id === entrega.usuario_id) || null,
+          gestor_externo: gestoresData?.find(g => g.id === entrega.gestor_externo_id) || null,
+          entrega_residuos: []
+        })) || [];
+        
+        console.log("Fallback - Entregas cargadas:", entregasWithUsers.length);
+        setEntregas(entregasWithUsers);
+        return;
+      }
+      
+      console.log("Entregas cargadas:", data?.length || 0);
       setEntregas(data || [])
     } catch (error) {
       console.error("Error loading entregas:", error)
+      setEntregas([]);
     }
   }
 
@@ -132,7 +212,7 @@ export default function EntregasPage() {
     const matchesSearch =
       entrega.gestor_externo.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entrega.numero_seguimiento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entrega.usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+      (entrega.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesEstado = filterEstado === "all" || entrega.estado === filterEstado
 
@@ -154,9 +234,11 @@ export default function EntregasPage() {
           <div className="h-10 bg-muted animate-pulse rounded w-32" />
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-          ))}
+          <div className="h-16 bg-muted animate-pulse rounded" />
+          <div className="h-16 bg-muted animate-pulse rounded" />
+          <div className="h-16 bg-muted animate-pulse rounded" />
+          <div className="h-16 bg-muted animate-pulse rounded" />
+          <div className="h-16 bg-muted animate-pulse rounded" />
         </div>
       </div>
     )
@@ -340,7 +422,7 @@ export default function EntregasPage() {
                             </Badge>
                             <div className="space-y-1">
                               {entrega.entrega_residuos.slice(0, 3).map((er, index) => (
-                                <div key={index} className="text-xs text-muted-foreground">
+                                <div key={`residuo-${er.residuo.id}-${index}`} className="text-xs text-muted-foreground">
                                   <span className="font-medium">
                                     {er.residuo.tipo.charAt(0).toUpperCase() + er.residuo.tipo.slice(1)}:
                                   </span>{" "}
@@ -363,8 +445,8 @@ export default function EntregasPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium">{entrega.usuario.nombre_completo}</div>
-                            {entrega.usuario.departamento && (
+                            <div className="font-medium">{entrega.usuario?.nombre_completo || "Sin asignar"}</div>
+                            {entrega.usuario?.departamento && (
                               <div className="text-sm text-muted-foreground">{entrega.usuario.departamento}</div>
                             )}
                           </div>

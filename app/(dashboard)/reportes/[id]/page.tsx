@@ -321,17 +321,17 @@ export default function DetalleReportePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Nombre Completo</span>
-                <p className="mt-1">{reporte.usuario.nombre_completo}</p>
+                <p className="mt-1">{reporte.usuario?.nombre_completo || "No disponible"}</p>
               </div>
               
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Email</span>
-                <p className="mt-1">{reporte.usuario.email}</p>
+                <p className="mt-1">{reporte.usuario?.email || "No disponible"}</p>
               </div>
               
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Departamento</span>
-                <p className="mt-1">{reporte.usuario.departamento}</p>
+                <p className="mt-1">{reporte.usuario?.departamento || "No disponible"}</p>
               </div>
               
               <div>
