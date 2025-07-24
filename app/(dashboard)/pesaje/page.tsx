@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Search, Scale, QrCode, Eye, MoreHorizontal, AlertTriangle, TrendingUp } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { WASTE_TYPES } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -40,7 +40,7 @@ interface Pesaje {
 }
 
 export default function PesajePage() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, loading: userLoading } = useCurrentUser()
   const [pesajes, setPesajes] = useState<Pesaje[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -48,25 +48,16 @@ export default function PesajePage() {
   const { t } = useLanguage()
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
-        if (currentUser) {
-          await loadPesajes(currentUser)
-        }
-      } catch (error) {
-        console.error("Error loading data:", error)
-      } finally {
-        setLoading(false)
-      }
+    if (user && !userLoading) {
+      loadPesajes()
     }
+  }, [user, userLoading])
 
-    loadData()
-  }, [])
-
-  const loadPesajes = async (user: User) => {
+  const loadPesajes = async () => {
+    if (!user) return
+    
     try {
+      setLoading(true)
       let query = supabase
         .from("pesajes")
         .select(`
@@ -93,6 +84,8 @@ export default function PesajePage() {
       setPesajes(data || [])
     } catch (error) {
       console.error("Error loading pesajes:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -107,24 +100,36 @@ export default function PesajePage() {
     return { variant: "destructive" as const, label: "Alta" }
   }
 
-  const filteredPesajes = pesajes.filter((pesaje) => {
-    const matchesSearch =
-      pesaje.codigo_escaneado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pesaje.residuo.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (pesaje.responsable?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
+  // Memoized filtering for better performance
+  const filteredPesajes = useMemo(() => {
+    return pesajes.filter((pesaje) => {
+      const matchesSearch =
+        pesaje.codigo_escaneado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pesaje.residuo.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (pesaje.responsable?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesTipo = filterTipo === "all" || pesaje.residuo.tipo === filterTipo
+      const matchesTipo = filterTipo === "all" || pesaje.residuo.tipo === filterTipo
 
-    return matchesSearch && matchesTipo
-  })
+      return matchesSearch && matchesTipo
+    })
+  }, [pesajes, searchTerm, filterTipo])
 
-  // Calcular estadísticas
-  const totalPeso = pesajes.reduce((sum, p) => sum + p.peso, 0)
-  const pesoPromedio = pesajes.length > 0 ? totalPeso / pesajes.length : 0
-  const diferenciasAltas = pesajes.filter((p) => {
-    const diferencia = Math.abs(p.peso - p.residuo.cantidad)
-    return (diferencia / p.residuo.cantidad) * 100 > 10
-  }).length
+  // Memoized statistics calculation
+  const stats = useMemo(() => {
+    const totalPeso = pesajes.reduce((sum, p) => sum + p.peso, 0)
+    const pesoPromedio = pesajes.length > 0 ? totalPeso / pesajes.length : 0
+    const diferenciasAltas = pesajes.filter((p) => {
+      const diferencia = Math.abs(p.peso - p.residuo.cantidad)
+      return (diferencia / p.residuo.cantidad) * 100 > 10
+    }).length
+    
+    return {
+      totalPeso,
+      pesoPromedio,
+      diferenciasAltas,
+      total: pesajes.length
+    }
+  }, [pesajes])
 
   if (loading) {
     return (
@@ -181,8 +186,8 @@ export default function PesajePage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalPeso.toFixed(2)} kg</div>
-            <p className="text-xs text-muted-foreground">Promedio: {pesoPromedio.toFixed(2)} kg</p>
+            <div className="text-2xl font-bold">{stats.totalPeso.toFixed(2)} kg</div>
+            <p className="text-xs text-muted-foreground">Promedio: {stats.pesoPromedio.toFixed(2)} kg</p>
           </CardContent>
         </Card>
 
@@ -192,9 +197,9 @@ export default function PesajePage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{diferenciasAltas}</div>
+            <div className="text-2xl font-bold">{stats.diferenciasAltas}</div>
             <p className="text-xs text-muted-foreground">
-              {pesajes.length > 0 ? ((diferenciasAltas / pesajes.length) * 100).toFixed(1) : 0}% del total
+              {pesajes.length > 0 ? ((stats.diferenciasAltas / pesajes.length) * 100).toFixed(1) : 0}% del total
             </p>
           </CardContent>
         </Card>
@@ -206,7 +211,7 @@ export default function PesajePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {pesajes.length > 0 ? (100 - (diferenciasAltas / pesajes.length) * 100).toFixed(1) : 100}%
+              {pesajes.length > 0 ? (100 - (stats.diferenciasAltas / pesajes.length) * 100).toFixed(1) : 100}%
             </div>
             <p className="text-xs text-muted-foreground">Pesajes dentro del rango</p>
           </CardContent>
@@ -214,11 +219,11 @@ export default function PesajePage() {
       </div>
 
       {/* Alert for high differences */}
-      {diferenciasAltas > 0 && (
+      {stats.diferenciasAltas > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Hay {diferenciasAltas} pesaje(s) con diferencias superiores al 10%. Revisa la calibración de las básculas y
+            Hay {stats.diferenciasAltas} pesaje(s) con diferencias superiores al 10%. Revisa la calibración de las básculas y
             la clasificación inicial de los residuos.
           </AlertDescription>
         </Alert>

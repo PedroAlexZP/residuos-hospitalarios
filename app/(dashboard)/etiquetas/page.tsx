@@ -117,8 +117,8 @@ export default function EtiquetasPage() {
           <div className="h-10 bg-muted animate-pulse rounded w-32" />
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+          {Array.from({ length: 5 }, () => crypto.randomUUID()).map((id) => (
+            <div key={id} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       </div>
@@ -133,15 +133,6 @@ export default function EtiquetasPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t("gestionEtiquetas")}</h1>
           <p className="text-muted-foreground">{t("registroSeguimientoEtiquetas")}</p>
         </div>
-        {/* Elimina la declaración de 'user' si no se usa */}
-        {/* {user && ["generador", "supervisor", "admin"].includes(user.rol) && ( */}
-        {/*   <Link href="/etiquetas/generar"> */}
-        {/*     <Button> */}
-        {/*       <Plus className="mr-2 h-4 w-4" /> */}
-        {/*       {t("generarEtiqueta")} */}
-        {/*     </Button> */}
-        {/*   </Link> */}
-        {/* )} */}
       </div>
 
       {/* Stats Cards */}

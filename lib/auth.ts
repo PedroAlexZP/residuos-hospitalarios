@@ -9,6 +9,17 @@ export interface User {
   activo: boolean
 }
 
+// Cache for user data with timestamp
+let userCache: { user: User; timestamp: number } | null = null
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
+
+const clearUserCache = () => {
+  userCache = null
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('user_profile')
+  }
+}
+
 export const signUp = async (email: string, password: string, userData: Omit<User, "id" | "activo">) => {
   try {
     // Create the user in auth with metadata
@@ -92,10 +103,8 @@ export const signIn = async (email: string, password: string) => {
 }
 
 export const signOut = async () => {
-  // Clear session storage
-  if (typeof window !== 'undefined') {
-    sessionStorage.removeItem('user_profile')
-  }
+  // Clear caches
+  clearUserCache()
   
   const { error } = await supabase.auth.signOut()
   if (error) throw error
@@ -106,15 +115,52 @@ export const signOut = async () => {
   }
 }
 
-export const getCurrentUser = async (): Promise<User | null> => {
+export const getCurrentUser = async (forceRefresh: boolean = false): Promise<User | null> => {
+  // Check cache first (unless force refresh)
+  if (!forceRefresh && userCache) {
+    const now = Date.now()
+    if (now - userCache.timestamp < CACHE_DURATION) {
+      return userCache.user
+    }
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return null
+  if (!user) {
+    clearUserCache()
+    return null
+  }
 
   try {
-    // ALWAYS fetch fresh data from public.users table
+    // Check session storage first
+    if (!forceRefresh && typeof window !== 'undefined') {
+      const cachedProfile = sessionStorage.getItem('user_profile')
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile)
+          const userData: User = {
+            id: parsed.id,
+            email: parsed.email,
+            nombre_completo: parsed.nombre_completo || '',
+            rol: parsed.rol,
+            departamento: parsed.departamento || '',
+            activo: parsed.activo
+          }
+          
+          // Update memory cache
+          userCache = { user: userData, timestamp: Date.now() }
+          return userData
+        } catch (parseError) {
+          // Invalid cached data, continue to fetch fresh
+          console.warn('Invalid cached user data:', parseError)
+          sessionStorage.removeItem('user_profile')
+        }
+      }
+    }
+
+    // Fetch from database only when necessary
     const { data: userProfile, error } = await supabase
       .from('users')
       .select('*')
@@ -124,7 +170,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
     if (error) {
       console.error('Error fetching user profile:', error)
       // Fallback to user metadata if database query fails
-      return {
+      const userData: User = {
         id: user.id,
         email: user.email || '',
         nombre_completo: user.user_metadata?.nombre_completo || '',
@@ -132,14 +178,13 @@ export const getCurrentUser = async (): Promise<User | null> => {
         departamento: user.user_metadata?.departamento || '',
         activo: true
       }
+      
+      // Cache the fallback data
+      userCache = { user: userData, timestamp: Date.now() }
+      return userData
     }
 
-    // Store updated profile in session storage for subsequent quick access
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('user_profile', JSON.stringify(userProfile))
-    }
-
-    return {
+    const userData: User = {
       id: userProfile.id,
       email: userProfile.email,
       nombre_completo: userProfile.nombre_completo || '',
@@ -147,6 +192,14 @@ export const getCurrentUser = async (): Promise<User | null> => {
       departamento: userProfile.departamento || '',
       activo: userProfile.activo
     }
+
+    // Update both caches
+    userCache = { user: userData, timestamp: Date.now() }
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('user_profile', JSON.stringify(userProfile))
+    }
+
+    return userData
   } catch (error) {
     console.error('Error in getCurrentUser:', error)
     

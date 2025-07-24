@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, Search, AlertTriangle, Eye, Edit, MoreHorizontal, Clock, CheckCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { URGENCY_LEVELS } from "@/lib/constants"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -37,7 +37,7 @@ interface Incidencia {
 }
 
 export default function IncidenciasPage() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, loading: userLoading } = useCurrentUser()
   const [incidencias, setIncidencias] = useState<Incidencia[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -46,25 +46,16 @@ export default function IncidenciasPage() {
   const { t } = useLanguage()
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
-        if (currentUser) {
-          await loadIncidencias(currentUser)
-        }
-      } catch (error) {
-        console.error("Error loading data:", error)
-      } finally {
-        setLoading(false)
-      }
+    if (user && !userLoading) {
+      loadIncidencias()
     }
+  }, [user, userLoading])
 
-    loadData()
-  }, [])
-
-  const loadIncidencias = async (user: User) => {
+  const loadIncidencias = async () => {
+    if (!user) return
+    
     try {
+      setLoading(true)
       let query = supabase
         .from("incidencias")
         .select(`
@@ -85,6 +76,8 @@ export default function IncidenciasPage() {
       setIncidencias(data || [])
     } catch (error) {
       console.error("Error loading incidencias:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -102,19 +95,33 @@ export default function IncidenciasPage() {
     return variants[estado] ?? "secondary"
   }
 
-  const filteredIncidencias = incidencias.filter((incidencia) => {
-    const matchesSearch =
-      incidencia.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incidencia.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (incidencia.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
+  // Memoized filtering for better performance
+  const filteredIncidencias = useMemo(() => {
+    return incidencias.filter((incidencia) => {
+      const matchesSearch =
+        incidencia.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        incidencia.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (incidencia.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesUrgencia = filterUrgencia === "all" || incidencia.urgencia === filterUrgencia
-    const matchesEstado = filterEstado === "all" || incidencia.estado === filterEstado
+      const matchesUrgencia = filterUrgencia === "all" || incidencia.urgencia === filterUrgencia
+      const matchesEstado = filterEstado === "all" || incidencia.estado === filterEstado
 
-    return matchesSearch && matchesUrgencia && matchesEstado
-  })
+      return matchesSearch && matchesUrgencia && matchesEstado
+    })
+  }, [incidencias, searchTerm, filterUrgencia, filterEstado])
 
-  if (loading) {
+  // Memoized statistics calculation
+  const stats = useMemo(() => {
+    return {
+      total: incidencias.length,
+      abiertas: incidencias.filter(i => i.estado === "abierta").length,
+      enProceso: incidencias.filter(i => i.estado === "en_proceso").length,
+      resueltas: incidencias.filter(i => i.estado === "resuelta").length,
+      criticas: incidencias.filter(i => i.urgencia === "critica").length,
+    }
+  }, [incidencias])
+
+  if (loading || userLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -156,7 +163,7 @@ export default function IncidenciasPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{incidencias.length}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
 
@@ -166,7 +173,7 @@ export default function IncidenciasPage() {
             <div className="h-2 w-2 bg-red-500 rounded-full" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{incidencias.filter((i) => i.estado === "abierta").length}</div>
+            <div className="text-2xl font-bold">{stats.abiertas}</div>
           </CardContent>
         </Card>
 
@@ -176,7 +183,7 @@ export default function IncidenciasPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{incidencias.filter((i) => i.estado === "en_proceso").length}</div>
+            <div className="text-2xl font-bold">{stats.enProceso}</div>
           </CardContent>
         </Card>
 
@@ -186,7 +193,7 @@ export default function IncidenciasPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{incidencias.filter((i) => i.estado === "resuelta").length}</div>
+            <div className="text-2xl font-bold">{stats.resueltas}</div>
           </CardContent>
         </Card>
       </div>

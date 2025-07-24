@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,7 +23,7 @@ import {
   Building
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser } from "@/lib/auth"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { useToast } from "@/hooks/use-toast"
 
 interface Usuario {
@@ -46,6 +46,7 @@ const rolesConfig = {
 
 export default function UsuariosPage() {
   const { toast } = useToast()
+  const { user: currentUser, loading: userLoading } = useCurrentUser()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -53,10 +54,14 @@ export default function UsuariosPage() {
   const [filterEstado, setFilterEstado] = useState("todos")
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (!userLoading && currentUser) {
+      loadData()
+    }
+  }, [userLoading, currentUser])
 
   const loadData = async () => {
+    if (!currentUser) return
+    
     try {
       setLoading(true)
       await fetchUsuarios()
@@ -73,20 +78,14 @@ export default function UsuariosPage() {
   }
 
   const fetchUsuarios = async () => {
-    try {
-      console.log("=== FETCHING USUARIOS ===")
-      
-      const currentUser = await getCurrentUser()
-      if (!currentUser) {
-        throw new Error("Usuario no autenticado")
-      }
+    if (!currentUser) return
 
+    try {
       // Try RPC function first
       const { data: rpcData, error: rpcError } = await supabase
         .rpc('get_all_users_public')
       
       if (!rpcError && rpcData && rpcData.length > 0) {
-        console.log("✅ RPC successful:", rpcData.length, "users")
         setUsuarios(rpcData)
         return
       }
@@ -98,7 +97,6 @@ export default function UsuariosPage() {
         .order("created_at", { ascending: false })
       
       if (!error && data) {
-        console.log("✅ Direct query successful:", data.length, "users")
         setUsuarios(data)
         return
       }
@@ -143,47 +141,50 @@ export default function UsuariosPage() {
     }
   }
 
-  const filteredUsuarios = usuarios.filter((usuario: Usuario) => {
-    const matchesSearch = usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         usuario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (usuario.departamento?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-    
-    const matchesRol = filterRol === "todos" || usuario.rol === filterRol
-    const matchesEstado = filterEstado === "todos" || 
-                         (filterEstado === "activo" && usuario.activo) ||
-                         (filterEstado === "inactivo" && !usuario.activo)
+  // Optimized filtering with useMemo
+  const filteredUsuarios = useMemo(() => {
+    return usuarios.filter((usuario: Usuario) => {
+      const matchesSearch = usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           usuario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (usuario.departamento?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+      
+      const matchesRol = filterRol === "todos" || usuario.rol === filterRol
+      const matchesEstado = filterEstado === "todos" || 
+                           (filterEstado === "activo" && usuario.activo) ||
+                           (filterEstado === "inactivo" && !usuario.activo)
 
-    return matchesSearch && matchesRol && matchesEstado
-  })
+      return matchesSearch && matchesRol && matchesEstado
+    })
+  }, [usuarios, searchTerm, filterRol, filterEstado])
 
-  const stats = {
+  // Optimized stats calculation with useMemo
+  const stats = useMemo(() => ({
     total: usuarios.length,
     activos: usuarios.filter((u: Usuario) => u.activo).length,
     porRol: Object.keys(rolesConfig).reduce((acc, rol) => {
       acc[rol] = usuarios.filter((u: Usuario) => u.rol === rol).length
       return acc
     }, {} as Record<string, number>)
-  }
+  }), [usuarios])
 
-  const getRolIcon = (rol: string) => {
+  // Optimized helper functions with useMemo
+  const getRolIcon = useMemo(() => (rol: string) => {
     const config = rolesConfig[rol as keyof typeof rolesConfig]
-    if (!config) return UserCheck
-    return config.icon
-  }
+    return config?.icon || UserCheck
+  }, [])
 
-  const getRolColor = (rol: string) => {
+  const getRolColor = useMemo(() => (rol: string) => {
     const config = rolesConfig[rol as keyof typeof rolesConfig]
-    if (!config) return "bg-gray-100 text-gray-800 border-gray-300"
-    return config.color
-  }
+    return config?.color || "bg-gray-100 text-gray-800 border-gray-300"
+  }, [])
 
-  const getRolLabel = (rol: string) => {
+  const getRolLabel = useMemo(() => (rol: string) => {
     const config = rolesConfig[rol as keyof typeof rolesConfig]
-    if (!config) return rol
-    return config.label
-  }
+    return config?.label || rol
+  }, [])
 
-  if (loading) {
+  // Early return for loading state
+  if (userLoading || loading) {
     const skeletonCards = Array.from({ length: 4 }, (_, i) => `card-${Date.now()}-${i}`)
     const skeletonRows = Array.from({ length: 5 }, (_, i) => `row-${Date.now()}-${i}`)
     

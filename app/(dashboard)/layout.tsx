@@ -4,9 +4,9 @@ import { Header } from "@/components/layout/header"
 
 export default function DashboardLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-hidden">
       {/* Sidebar: drawer en móvil, sticky en md+ */}

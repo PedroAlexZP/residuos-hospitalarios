@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,10 +23,11 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useLanguage } from "@/hooks/use-language"
+import { useToast } from "@/hooks/use-toast"
 
 interface Entrega {
   id: string
@@ -55,139 +56,127 @@ interface Entrega {
 }
 
 export default function EntregasPage() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, loading: userLoading } = useCurrentUser()
   const [entregas, setEntregas] = useState<Entrega[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterEstado, setFilterEstado] = useState<string>("all")
   const { t } = useLanguage()
+  const { toast } = useToast()
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
-        if (currentUser) {
-          await loadEntregas(currentUser)
-        }
-      } catch (error) {
-        console.error("Error loading data:", error)
-      } finally {
-        setLoading(false)
-      }
+    if (!userLoading && user) {
+      loadEntregas()
     }
+  }, [userLoading, user])
 
-    loadData()
-  }, [])
+  // Helper function to load gestores externos
+  const loadGestoresExternos = async (entregas: any[]) => {
+    const gestorIds = [...new Set(entregas.map(e => e.gestor_externo_id).filter(Boolean))]
+    if (gestorIds.length === 0) return entregas
 
-  const loadEntregas = async (user: User) => {
+    const { data: gestoresData } = await supabase
+      .from("gestores_externos")
+      .select("id, nombre, licencia, contacto")
+      .in("id", gestorIds)
+    
+    return entregas.map(entrega => ({
+      ...entrega,
+      gestor_externo: gestoresData?.find(g => g.id === entrega.gestor_externo_id) || null
+    }))
+  }
+
+  // Helper function to filter entregas by user role
+  const filterEntregasByRole = (entregas: any[]) => {
+    if (!user) return entregas
+    
+    if (user.rol === "gestor_externo") {
+      return entregas // Show all for external managers
+    }
+    
+    if (["supervisor", "admin"].includes(user.rol)) {
+      return entregas // Show all for supervisors and admins
+    }
+    
+    return entregas.filter(e => e.usuario_id === user.id)
+  }
+
+  // Helper function to load entregas via RPC
+  const loadEntregasViaRPC = async () => {
+    const { data: rpcData, error: rpcError } = await supabase
+      .rpc('get_entregas_with_users')
+
+    if (rpcError || !rpcData) return null
+
+    const transformedData = rpcData.map((entrega: any) => ({
+      id: entrega.id,
+      fecha_hora: entrega.fecha_hora,
+      certificado_pdf: entrega.certificado_pdf,
+      estado: entrega.estado,
+      numero_seguimiento: entrega.numero_seguimiento,
+      usuario_id: entrega.usuario_id,
+      gestor_externo_id: entrega.gestor_externo_id,
+      usuario: entrega.usuario_nombre ? {
+        nombre_completo: entrega.usuario_nombre,
+        departamento: entrega.usuario_departamento
+      } : null,
+      gestor_externo: null,
+      entrega_residuos: []
+    }))
+
+    const filteredData = filterEntregasByRole(transformedData)
+    return loadGestoresExternos(filteredData)
+  }
+
+  // Helper function to load entregas via direct query
+  const loadEntregasDirectly = async () => {
+    const { data: entregasData, error: entregasError } = await supabase
+      .from("entregas")
+      .select("*")
+      .order("fecha_hora", { ascending: false })
+      
+    if (entregasError) throw entregasError
+    
+    const [usuariosResponse, gestoresResponse] = await Promise.all([
+      supabase.from("users").select("id, nombre_completo, departamento"),
+      supabase.from("gestores_externos").select("id, nombre, licencia, contacto")
+    ])
+    
+    return entregasData?.map(entrega => ({
+      ...entrega,
+      usuario: usuariosResponse.data?.find(u => u.id === entrega.usuario_id) || null,
+      gestor_externo: gestoresResponse.data?.find(g => g.id === entrega.gestor_externo_id) || null,
+      entrega_residuos: []
+    })) || []
+  }
+
+  const loadEntregas = async () => {
+    if (!user) return
+    
     try {
-      console.log("Loading entregas for user:", user.rol);
+      setLoading(true)
       
-      // First attempt: Use our new RPC function that bypasses RLS
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_entregas_with_users');
-
-      if (!rpcError && rpcData) {
-        console.log("RPC get_entregas_with_users successful:", rpcData.length, "entregas");
-        
-        // Transform RPC data to expected format
-        const transformedData = rpcData.map((entrega: any) => ({
-          id: entrega.id,
-          fecha_hora: entrega.fecha_hora,
-          certificado_pdf: entrega.certificado_pdf,
-          estado: entrega.estado,
-          numero_seguimiento: entrega.numero_seguimiento,
-          usuario_id: entrega.usuario_id,
-          gestor_externo_id: entrega.gestor_externo_id,
-          usuario: entrega.usuario_nombre ? {
-            nombre_completo: entrega.usuario_nombre,
-            departamento: entrega.usuario_departamento
-          } : null,
-          gestor_externo: null, // We'll need to load this separately if needed
-          entrega_residuos: [] // We'll load these separately if needed
-        }));
-        
-        // Filter by user if needed
-        let filteredData = transformedData;
-        if (user.rol === "gestor_externo") {
-          filteredData = transformedData; // Show all for external managers
-        } else if (!["supervisor", "admin"].includes(user.rol)) {
-          filteredData = transformedData.filter((e: any) => e.usuario_id === user.id);
-        }
-        
-        console.log("Entregas after filtering:", filteredData.length);
-        console.log("Entregas with users:", filteredData.filter((e: any) => e.usuario).length);
-        setEntregas(filteredData);
-        return;
+      // Try RPC first
+      const rpcResult = await loadEntregasViaRPC()
+      if (rpcResult) {
+        setEntregas(rpcResult)
+        return
       }
 
-      console.error("RPC get_entregas_with_users failed:", rpcError);
-
-      // Fallback: original query with JOIN
-      let query = supabase
-        .from("entregas")
-        .select(`
-          *,
-          usuario:users(nombre_completo, departamento),
-          gestor_externo:gestores_externos(id, nombre, licencia, contacto),
-          entrega_residuos(
-            residuo:residuos(id, tipo, cantidad, ubicacion)
-          )
-        `)
-        .order("fecha_hora", { ascending: false })
-
-      // Filtrar por rol
-      if (user.rol === "gestor_externo") {
-        // Aquí necesitaríamos una relación entre usuarios y gestores externos
-        // Por ahora mostramos todas las entregas para gestores externos
-      } else if (!["supervisor", "admin"].includes(user.rol)) {
-        query = query.eq("usuario_id", user.id)
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error("Error loading entregas with JOIN:", error);
-        
-        // Fallback: cargar entregas sin join
-        console.log("Intentando fallback sin join...");
-        const { data: entregasData, error: entregasError } = await supabase
-          .from("entregas")
-          .select("*")
-          .order("fecha_hora", { ascending: false });
-          
-        if (entregasError) {
-          throw entregasError;
-        }
-        
-        // Cargar usuarios y gestores por separado
-        const { data: usuariosData } = await supabase
-          .from("users")
-          .select("id, nombre_completo, departamento");
-          
-        const { data: gestoresData } = await supabase
-          .from("gestores_externos")
-          .select("id, nombre, licencia, contacto");
-        
-        // Transform RPC data to expected format
-        const entregasWithUsers = entregasData?.map(entrega => ({
-          ...entrega,
-          usuario: usuariosData?.find(u => u.id === entrega.usuario_id) || null,
-          gestor_externo: gestoresData?.find(g => g.id === entrega.gestor_externo_id) || null,
-          entrega_residuos: []
-        })) || [];
-        
-        console.log("Fallback - Entregas cargadas:", entregasWithUsers.length);
-        setEntregas(entregasWithUsers);
-        return;
-      }
+      // Fallback to direct loading
+      const directResult = await loadEntregasDirectly()
+      setEntregas(directResult)
       
-      console.log("Entregas cargadas:", data?.length || 0);
-      setEntregas(data || [])
     } catch (error) {
       console.error("Error loading entregas:", error)
-      setEntregas([]);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las entregas",
+        variant: "destructive",
+      })
+      setEntregas([])
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -208,23 +197,37 @@ export default function EntregasPage() {
     }
   }
 
-  const filteredEntregas = entregas.filter((entrega) => {
-    const matchesSearch =
-      entrega.gestor_externo.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entrega.numero_seguimiento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entrega.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
+  // Memoized filtering for better performance and null safety
+  const filteredEntregas = useMemo(() => {
+    return entregas.filter((entrega) => {
+      const matchesSearch =
+        (entrega.gestor_externo?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entrega.numero_seguimiento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (entrega.usuario?.nombre_completo || "").toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesEstado = filterEstado === "all" || entrega.estado === filterEstado
+      const matchesEstado = filterEstado === "all" || entrega.estado === filterEstado
 
-    return matchesSearch && matchesEstado
-  })
+      return matchesSearch && matchesEstado
+    })
+  }, [entregas, searchTerm, filterEstado])
 
-  // Calcular estadísticas
-  const totalResiduos = entregas.reduce((sum, e) => sum + e.entrega_residuos.length, 0)
-  const pesoTotal = entregas.reduce(
-    (sum, e) => sum + e.entrega_residuos.reduce((subSum, er) => subSum + er.residuo.cantidad, 0),
-    0,
-  )
+  // Memoized statistics calculation
+  const stats = useMemo(() => {
+    const totalResiduos = entregas.reduce((sum, e) => sum + e.entrega_residuos.length, 0)
+    const pesoTotal = entregas.reduce(
+      (sum, e) => sum + e.entrega_residuos.reduce((subSum, er) => subSum + er.residuo.cantidad, 0),
+      0,
+    )
+    
+    return {
+      totalResiduos,
+      pesoTotal,
+      total: entregas.length,
+      pendientes: entregas.filter(e => e.estado === "pendiente").length,
+      completadas: entregas.filter(e => e.estado === "completada").length,
+      canceladas: entregas.filter(e => e.estado === "cancelada").length,
+    }
+  }, [entregas])
 
   if (loading) {
     return (
@@ -271,7 +274,7 @@ export default function EntregasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{entregas.length}</div>
-            <p className="text-xs text-muted-foreground">{totalResiduos} residuos entregados</p>
+            <p className="text-xs text-muted-foreground">{stats.totalResiduos} residuos entregados</p>
           </CardContent>
         </Card>
 
@@ -303,7 +306,7 @@ export default function EntregasPage() {
             <div className="h-2 w-2 bg-green-500 rounded-full" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pesoTotal.toFixed(2)} kg</div>
+            <div className="text-2xl font-bold">{stats.pesoTotal.toFixed(2)} kg</div>
             <p className="text-xs text-muted-foreground">Residuos procesados</p>
           </CardContent>
         </Card>
