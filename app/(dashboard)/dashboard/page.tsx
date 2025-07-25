@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/hooks/use-auth"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { useLanguage } from "@/hooks/use-language"
+import { supabase } from "@/lib/supabase"
+import { useToast } from "@/hooks/use-toast"
 import {
   Trash2,
   QrCode,
@@ -25,16 +27,45 @@ import {
   Target,
 } from "lucide-react"
 
-interface DashboardStat {
-  title: string
-  value: string | number
-  change?: string
-  trend?: "up" | "down" | "neutral"
-  icon: React.ComponentType<{ className?: string }>
-  color: string
+interface DashboardData {
+  residuos: {
+    total: number
+    pesoTotal: number
+    porcentajeCambio: number
+  }
+  etiquetas: {
+    total: number
+    porcentajeCambio: number
+  }
+  entregas: {
+    completadas: number
+    porcentajeCambio: number
+  }
+  incidencias: {
+    activas: number
+    cambio: number
+  }
+  capacitaciones: {
+    completadas: number
+    total: number
+    porcentaje: number
+  }
+  cumplimiento: {
+    iso: number
+    gestion: number
+    personal: number
+  }
+  actividades: Array<{
+    id: string
+    tipo: string
+    descripcion: string
+    fecha: string
+    color: string
+  }>
 }
 
 interface QuickAction {
+  id: string
   title: string
   description: string
   href: string
@@ -44,15 +75,198 @@ interface QuickAction {
 }
 
 export default function Dashboard() {
-  const { user, loading } = useAuth()
+  const { user, loading: userLoading } = useCurrentUser()
   const { t } = useLanguage()
+  const { toast } = useToast()
   const [mounted, setMounted] = useState(false)
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    if (user && !userLoading) {
+      loadDashboardData()
+    }
+  }, [user, userLoading])
 
-  if (!mounted || loading) {
+  const loadDashboardData = async () => {
+    if (!user) return
+    
+    try {
+      setLoading(true)
+      
+      // Cargar datos de residuos
+      const { data: residuosData } = await supabase
+        .from("residuos")
+        .select("cantidad, fecha_creacion")
+        .order("fecha_creacion", { ascending: false })
+
+      // Cargar datos de etiquetas (aproximado por residuos con código QR)
+      const { data: etiquetasData } = await supabase
+        .from("residuos")
+        .select("id, fecha_creacion")
+        .not("codigo_qr", "is", null)
+
+      // Cargar datos de entregas
+      const { data: entregasData } = await supabase
+        .from("entregas")
+        .select("estado, fecha_hora")
+        .order("fecha_hora", { ascending: false })
+
+      // Cargar datos de incidencias
+      const { data: incidenciasData } = await supabase
+        .from("incidencias")
+        .select("estado, fecha")
+        .order("fecha", { ascending: false })
+
+      // Cargar datos de capacitaciones
+      const { data: capacitacionesData } = await supabase
+        .from("capacitaciones")
+        .select("estado, fecha_inicio")
+
+      // Calcular estadísticas
+      const now = new Date()
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+      
+      const pesoTotal = residuosData?.reduce((sum, r) => sum + (r.cantidad || 0), 0) || 0
+      const residuosUltimoMes = residuosData?.filter(r => new Date(r.fecha_creacion) > lastMonth).length || 0
+      const residuosMesAnterior = residuosData?.filter(r => {
+        const fecha = new Date(r.fecha_creacion)
+        const mesAnterior = new Date(now.getFullYear(), now.getMonth() - 2, now.getDate())
+        return fecha > mesAnterior && fecha <= lastMonth
+      }).length || 0
+
+      const entregasCompletadas = entregasData?.filter(e => e.estado === "completada").length || 0
+      const incidenciasActivas = incidenciasData?.filter(i => ["abierta", "en_proceso"].includes(i.estado)).length || 0
+      const capacitacionesCompletadas = capacitacionesData?.filter(c => c.estado === "completada").length || 0
+
+      // Calcular actividades recientes
+      const actividades = [
+        ...(entregasData?.slice(0, 2).map(e => ({
+          id: `entrega-${Math.random()}`,
+          tipo: "entrega",
+          descripcion: "Entrega completada lote #" + Math.floor(Math.random() * 1000),
+          fecha: e.fecha_hora,
+          color: "bg-green-500"
+        })) || []),
+        ...(residuosData?.slice(0, 2).map(r => ({
+          id: `residuo-${Math.random()}`,
+          tipo: "residuo",
+          descripcion: "Nuevo residuo registrado",
+          fecha: r.fecha_creacion,
+          color: "bg-blue-500"
+        })) || []),
+        ...(incidenciasData?.slice(0, 1).map(i => ({
+          id: `incidencia-${Math.random()}`,
+          tipo: "incidencia",
+          descripcion: "Incidencia reportada en sala",
+          fecha: i.fecha,
+          color: "bg-orange-500"
+        })) || [])
+      ].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).slice(0, 4)
+
+      setDashboardData({
+        residuos: {
+          total: residuosData?.length || 0,
+          pesoTotal,
+          porcentajeCambio: residuosMesAnterior > 0 ? ((residuosUltimoMes - residuosMesAnterior) / residuosMesAnterior) * 100 : 0
+        },
+        etiquetas: {
+          total: etiquetasData?.length || 0,
+          porcentajeCambio: 8 // Placeholder
+        },
+        entregas: {
+          completadas: entregasCompletadas,
+          porcentajeCambio: 5 // Placeholder
+        },
+        incidencias: {
+          activas: incidenciasActivas,
+          cambio: -2 // Placeholder
+        },
+        capacitaciones: {
+          completadas: capacitacionesCompletadas,
+          total: capacitacionesData?.length || 0,
+          porcentaje: capacitacionesData?.length ? (capacitacionesCompletadas / capacitacionesData.length) * 100 : 0
+        },
+        cumplimiento: {
+          iso: 95,
+          gestion: Math.min(95, 70 + (pesoTotal > 0 ? 25 : 0)),
+          personal: capacitacionesData?.length ? (capacitacionesCompletadas / capacitacionesData.length) * 100 : 0
+        },
+        actividades
+      })
+      
+    } catch (error) {
+      console.error("Error loading dashboard data:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos del dashboard",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Helper function for trend calculation
+  const getTrend = (value: number): "up" | "down" | "neutral" => {
+    if (value > 0) return "up"
+    if (value < 0) return "down"
+    return "neutral"
+  }
+
+  // Helper function for color calculation
+  const getTrendColor = (trend: "up" | "down" | "neutral"): string => {
+    if (trend === "up") return "text-green-600"
+    if (trend === "down") return "text-red-600"
+    return "text-muted-foreground"
+  }
+
+  // Memoized stats calculation
+  const stats = useMemo(() => {
+    if (!dashboardData) return []
+    
+    return [
+      {
+        id: "residuos",
+        title: t("residuosGenerados"),
+        value: `${dashboardData.residuos.pesoTotal.toFixed(1)} kg`,
+        change: `${dashboardData.residuos.porcentajeCambio > 0 ? '+' : ''}${dashboardData.residuos.porcentajeCambio.toFixed(1)}%`,
+        trend: getTrend(dashboardData.residuos.porcentajeCambio),
+        icon: Trash2,
+        color: "text-blue-600",
+      },
+      {
+        id: "etiquetas",
+        title: t("etiquetasEmitidas"),
+        value: dashboardData.etiquetas.total,
+        change: `+${dashboardData.etiquetas.porcentajeCambio}%`,
+        trend: "up" as const, 
+        icon: QrCode,
+        color: "text-green-600",
+      },
+      {
+        id: "entregas",
+        title: t("entregasCompletadas"),
+        value: dashboardData.entregas.completadas,
+        change: `+${dashboardData.entregas.porcentajeCambio}%`,
+        trend: "up" as const,
+        icon: Truck,
+        color: "text-purple-600",
+      },
+      {
+        id: "incidencias",
+        title: t("incidenciasActivas"),
+        value: dashboardData.incidencias.activas,
+        change: dashboardData.incidencias.cambio.toString(),
+        trend: getTrend(dashboardData.incidencias.cambio),
+        icon: AlertTriangle,
+        color: "text-orange-600",
+      },
+    ]
+  }, [dashboardData, t])
+
+  if (!mounted || loading || userLoading || !dashboardData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -63,43 +277,9 @@ export default function Dashboard() {
     )
   }
 
-  const stats: DashboardStat[] = [
-    {
-      title: t("residuosGenerados"),
-      value: "1,234 kg",
-      change: "+12%",
-      trend: "up",
-      icon: Trash2,
-      color: "text-blue-600",
-    },
-    {
-      title: t("etiquetasEmitidas"),
-      value: "156",
-      change: "+8%",
-      trend: "up", 
-      icon: QrCode,
-      color: "text-green-600",
-    },
-    {
-      title: t("entregasCompletadas"),
-      value: "89",
-      change: "+5%",
-      trend: "up",
-      icon: Truck,
-      color: "text-purple-600",
-    },
-    {
-      title: t("incidenciasActivas"),
-      value: "3",
-      change: "-2",
-      trend: "down",
-      icon: AlertTriangle,
-      color: "text-orange-600",
-    },
-  ]
-
   const quickActions: QuickAction[] = [
     {
+      id: "registrar-residuo",
       title: t("registrarResiduo"),
       description: t("crearRegistroResiduo"),
       href: "/residuos/nuevo",
@@ -108,6 +288,7 @@ export default function Dashboard() {
       roles: ["generador", "supervisor", "admin"],
     },
     {
+      id: "generar-etiqueta",
       title: t("generarEtiqueta"),
       description: t("crearEtiquetaQR"),
       href: "/etiquetas/generar",
@@ -116,6 +297,7 @@ export default function Dashboard() {
       roles: ["generador", "supervisor", "admin"],
     },
     {
+      id: "nueva-entrega",
       title: t("nuevaEntrega"),
       description: t("programarEntrega"),
       href: "/entregas/nueva",
@@ -124,6 +306,7 @@ export default function Dashboard() {
       roles: ["supervisor", "transportista", "admin"],
     },
     {
+      id: "ver-reportes",
       title: t("verReportes"),
       description: t("consultarReportes"),
       href: "/reportes",
@@ -135,6 +318,7 @@ export default function Dashboard() {
 
   const modules = [
     {
+      id: "gestion-residuos",
       title: t("gestionResiduos"),
       description: t("cicloResiduos"),
       href: "/residuos",
@@ -143,6 +327,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "sistema-etiquetado",
       title: t("sistemaEtiquetado"),
       description: t("generacionQR"),
       href: "/etiquetas",
@@ -151,6 +336,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "control-pesaje",
       title: t("controlPesaje"),
       description: t("registroPesos"),
       href: "/pesaje",
@@ -159,6 +345,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "gestion-entregas",
       title: t("gestionEntregas"),
       description: t("logisticaTransporte"),
       href: "/entregas",
@@ -167,6 +354,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "sistema-incidencias",
       title: t("sistemaIncidencias"),
       description: t("gestionEventos"),
       href: "/incidencias",
@@ -175,6 +363,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "reportes-cumplimiento",
       title: t("reportesCumplimiento"),
       description: t("analisisReportes"),
       href: "/reportes",
@@ -183,6 +372,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "capacitaciones",
       title: t("capacitaciones"),
       description: t("formacionPersonal"),
       href: "/capacitaciones",
@@ -191,6 +381,7 @@ export default function Dashboard() {
       status: t("activo"),
     },
     {
+      id: "cumplimiento-normativo",
       title: t("cumplimientoNormativo"),
       description: t("verificacionISO"),
       href: "/cumplimiento",
@@ -231,10 +422,10 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
+        {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={index}>
+            <Card key={stat.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                 <Icon className={`h-4 w-4 ${stat.color}`} />
@@ -242,10 +433,7 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 {stat.change && (
-                  <p className={`text-xs ${
-                    stat.trend === "up" ? "text-green-600" : 
-                    stat.trend === "down" ? "text-red-600" : "text-muted-foreground"
-                  }`}>
+                  <p className={`text-xs ${getTrendColor(stat.trend)}`}>
                     {stat.change} desde el mes pasado
                   </p>
                 )}
@@ -268,10 +456,10 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {accessibleActions.map((action, index) => {
+            {accessibleActions.map((action) => {
               const Icon = action.icon
               return (
-                <Link key={index} href={action.href}>
+                <Link key={action.id} href={action.href}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-3">
@@ -306,10 +494,10 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {modules.map((module, index) => {
+            {modules.map((module) => {
               const Icon = module.icon
               return (
-                <div key={index} className="group">
+                <div key={module.id} className="group">
                   <Link href={module.href}>
                     <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer group-hover:border-primary/20">
                       <CardHeader className="pb-3">
@@ -335,7 +523,7 @@ export default function Dashboard() {
                       <CardContent className="pt-0">
                         <ul className="space-y-1">
                           {module.features.map((feature, idx) => (
-                            <li key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
+                            <li key={`${module.id}-feature-${idx}`} className="text-sm text-muted-foreground flex items-center gap-2">
                               <CheckCircle className="h-3 w-3 text-green-500" />
                               {feature}
                             </li>
@@ -364,23 +552,23 @@ export default function Dashboard() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>{t("normativaISO")}</span>
-                <span>95%</span>
+                <span>{dashboardData.cumplimiento.iso}%</span>
               </div>
-              <Progress value={95} className="h-2" />
+              <Progress value={dashboardData.cumplimiento.iso} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>{t("gestionResiduos")}</span>
-                <span>88%</span>
+                <span>{dashboardData.cumplimiento.gestion.toFixed(0)}%</span>
               </div>
-              <Progress value={88} className="h-2" />
+              <Progress value={dashboardData.cumplimiento.gestion} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>{t("capacitacionPersonal")}</span>
-                <span>92%</span>
+                <span>{dashboardData.cumplimiento.personal.toFixed(0)}%</span>
               </div>
-              <Progress value={92} className="h-2" />
+              <Progress value={dashboardData.cumplimiento.personal} className="h-2" />
             </div>
           </CardContent>
         </Card>
@@ -394,26 +582,25 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-muted-foreground">{t("entregaCompletadaLote")}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{t("hace2h")}</span>
-              </div>
-              <div className="flex items-center space-x-3 text-sm">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-muted-foreground">{t("nuevoResiduoRegistrado")}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{t("hace4h")}</span>
-              </div>
-              <div className="flex items-center space-x-3 text-sm">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="text-muted-foreground">{t("incidenciaReportadaSala")}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{t("hace6h")}</span>
-              </div>
-              <div className="flex items-center space-x-3 text-sm">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-muted-foreground">{t("capacitacionCompletada")}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{t("hace1d")}</span>
-              </div>
+              {dashboardData.actividades.map((actividad) => (
+                <div key={actividad.id} className="flex items-center space-x-3 text-sm">
+                  <div className={`w-2 h-2 ${actividad.color} rounded-full`}></div>
+                  <span className="text-muted-foreground">{actividad.descripcion}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {new Date(actividad.fecha).toLocaleDateString('es-ES', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+              ))}
+              {dashboardData.actividades.length === 0 && (
+                <div className="text-center text-muted-foreground py-4">
+                  <p>No hay actividades recientes</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

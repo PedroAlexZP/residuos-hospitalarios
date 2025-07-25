@@ -1,15 +1,28 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trash2, Home, Plus, QrCode, Scale, Truck, AlertTriangle, BarChart3, Shield, BookOpen, Users, Sun, Moon, Languages, LogOut } from "lucide-react";
+import {
+  Trash2,
+  Home,
+  QrCode,
+  Scale,
+  Truck,
+  AlertTriangle,
+  BarChart3,
+  BookOpen,
+  Users,
+  Sun,
+  Moon,
+  Languages,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { useTheme } from "next-themes";
-import type { Permission } from "@/lib/permissions";
 // Types
 export interface NavItem {
   title: string;
@@ -28,24 +41,27 @@ export interface SidebarProps {
 
 // Hook para detectar si es escritorio (md+)
 export function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false);
   useEffect(() => {
-    const check = () => setIsDesktop(window.matchMedia("(min-width: 768px)").matches)
-    check()
-    window.addEventListener("resize", check)
-    return () => window.removeEventListener("resize", check)
-  }, [])
-  return isDesktop
+    const check = () =>
+      setIsDesktop(window.matchMedia("(min-width: 768px)").matches);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isDesktop;
 }
 
-export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open?: boolean, onOpenChange?: (open: boolean) => void }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export function Sidebar({
+  className,
+  open,
+  onOpenChange,
+}: SidebarProps & { open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  const [isCollapsed] = useState(false);
   const { user, signOut } = useAuth();
-  const [permissions, setPermissions] = useState<Permission[]>([]);
   const pathname = usePathname();
   const { t, setLanguage, language } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const isDesktop = useIsDesktop();
   // Log para depuración
   useEffect(() => {
     console.log("[Sidebar] user:", user);
@@ -56,15 +72,85 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
 
   // Example nav items (customize as needed)
   const navItems: NavItem[] = [
-    { title: "Dashboard", translationKey: "dashboard", href: "/dashboard", icon: Home, roles: ["admin", "user", "generador", "supervisor", "transportista", "gestor_externo"], group: "main" },
-    { title: "Residuos", translationKey: "residuos", href: "/residuos", icon: Trash2, roles: ["admin", "user", "generador", "supervisor"], group: "operations" },
-    { title: "Etiquetas", translationKey: "etiquetas", href: "/etiquetas", icon: QrCode, roles: ["admin", "user", "generador", "supervisor"], group: "operations" },
-    { title: "Pesaje", translationKey: "pesaje", href: "/pesaje", icon: Scale, roles: ["admin", "user", "generador", "supervisor"], group: "operations" },
-    { title: "Entregas", translationKey: "entregas", href: "/entregas", icon: Truck, roles: ["admin", "user", "transportista", "supervisor"], group: "logistics" },
-    { title: "Incidencias", translationKey: "incidencias", href: "/incidencias", icon: AlertTriangle, roles: ["admin", "user", "supervisor"], group: "management" },
-    { title: "Reportes", translationKey: "reportes", href: "/reportes", icon: BarChart3, roles: ["admin", "user", "supervisor"], group: "management" },
-    { title: "Capacitaciones", translationKey: "capacitaciones", href: "/capacitaciones", icon: BookOpen, roles: ["admin", "user", "generador", "supervisor"], group: "training" },
-    { title: "Usuarios", translationKey: "usuarios", href: "/usuarios", icon: Users, roles: ["admin"], group: "admin" },
+    {
+      title: "Dashboard",
+      translationKey: "dashboard",
+      href: "/dashboard",
+      icon: Home,
+      roles: [
+        "admin",
+        "user",
+        "generador",
+        "supervisor",
+        "transportista",
+        "gestor_externo",
+      ],
+      group: "main",
+    },
+    {
+      title: "Residuos",
+      translationKey: "residuos",
+      href: "/residuos",
+      icon: Trash2,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "operations",
+    },
+    {
+      title: "Etiquetas",
+      translationKey: "etiquetas",
+      href: "/etiquetas",
+      icon: QrCode,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "operations",
+    },
+    {
+      title: "Pesaje",
+      translationKey: "pesaje",
+      href: "/pesaje",
+      icon: Scale,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "operations",
+    },
+    {
+      title: "Entregas",
+      translationKey: "entregas",
+      href: "/entregas",
+      icon: Truck,
+      roles: ["admin", "user", "transportista", "supervisor"],
+      group: "logistics",
+    },
+    {
+      title: "Incidencias",
+      translationKey: "incidencias",
+      href: "/incidencias",
+      icon: AlertTriangle,
+      roles: ["admin", "user", "supervisor"],
+      group: "management",
+    },
+    {
+      title: "Reportes",
+      translationKey: "reportes",
+      href: "/reportes",
+      icon: BarChart3,
+      roles: ["admin", "user", "supervisor"],
+      group: "management",
+    },
+    {
+      title: "Capacitaciones",
+      translationKey: "capacitaciones",
+      href: "/capacitaciones",
+      icon: BookOpen,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "training",
+    },
+    {
+      title: "Usuarios",
+      translationKey: "usuarios",
+      href: "/usuarios",
+      icon: Users,
+      roles: ["admin"],
+      group: "admin",
+    },
   ];
 
   // Permission check (customize as needed)
@@ -75,7 +161,7 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
   };
   const filteredNavItems = navItems.filter(canAccessItem);
   const groupedItems = filteredNavItems.reduce((groups, item) => {
-    const group = item.group || 'other';
+    const group = item.group || "other";
     if (!groups[group]) groups[group] = [];
     groups[group].push(item);
     return groups;
@@ -86,12 +172,210 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
     try {
       await signOut();
       window.location.href = "/auth/login";
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
-  // Sidebar UI
+  // Helper function to render navigation content
+  const renderNavContent = () => {
+    if (!user) {
+      return (
+        <div className="text-center text-muted-foreground py-8">
+          <p>No hay usuario autenticado.</p>
+        </div>
+      );
+    }
+
+    if (filteredNavItems.length === 0) {
+      return (
+        <div className="text-center text-muted-foreground py-8">
+          <p>No tienes permisos para ver módulos.</p>
+          <p>
+            Tu rol: <span className="font-mono">{user.rol}</span>
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {/* Main */}
+        {groupedItems.main?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-11 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2 justify-center"
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Divider */}
+        {groupedItems.operations && !isCollapsed && (
+          <div className="my-4 border-t border-border/50" />
+        )}
+        {/* Operations */}
+        {groupedItems.operations?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2",
+                  item.isSubItem &&
+                    !isCollapsed &&
+                    "ml-4 w-[calc(100%-1rem)]",
+                  item.isSubItem && "h-9 text-sm"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Logistics */}
+        {groupedItems.logistics && !isCollapsed && (
+          <div className="px-2 py-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Logística
+            </h3>
+          </div>
+        )}
+        {groupedItems.logistics?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2",
+                  item.isSubItem &&
+                    !isCollapsed &&
+                    "ml-4 w-[calc(100%-1rem)]",
+                  item.isSubItem && "h-9 text-sm"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Management */}
+        {groupedItems.management && !isCollapsed && (
+          <div className="px-2 py-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Gestión
+            </h3>
+          </div>
+        )}
+        {groupedItems.management?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Training */}
+        {groupedItems.training?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Admin */}
+        {groupedItems.admin && !isCollapsed && (
+          <div className="px-2 py-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Administración
+            </h3>
+          </div>
+        )}
+        {groupedItems.admin?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+      </>
+    );
+  };
   return (
-    <div className={cn("flex h-full flex-col bg-background border-r w-64 min-w-[220px] transition-all duration-200", className, isCollapsed && "w-20 min-w-[60px]")}> 
+    <div
+      className={cn(
+        "flex h-screen flex-col bg-background border-r w-64 min-w-[220px] transition-all duration-200 sticky top-0",
+        className,
+        isCollapsed && "w-20 min-w-[60px]"
+      )}
+    >
       {/* Header */}
       <div className="flex h-16 items-center border-b px-4">
         <div className="flex items-center gap-2">
@@ -101,7 +385,9 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
           {!isCollapsed && (
             <div className="flex flex-col animate-in slide-in-from-left-2 duration-200">
               <span className="text-sm font-semibold">{t("appName")}</span>
-              <span className="text-xs text-muted-foreground">{t("appSubtitle")}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("appSubtitle")}
+              </span>
             </div>
           )}
         </div>
@@ -110,133 +396,7 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
         <nav className="space-y-1">
-          {/* Si no hay usuario o no tiene rol válido, mostrar mensaje */}
-          {!user ? (
-            <div className="text-center text-muted-foreground py-8">
-              <p>No hay usuario autenticado.</p>
-            </div>
-          ) : filteredNavItems.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              <p>No tienes permisos para ver módulos.</p>
-              <p>Tu rol: <span className="font-mono">{user.rol}</span></p>
-            </div>
-          ) : (
-            <>
-              {/* Main */}
-              {groupedItems.main?.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn("w-full justify-start gap-3 h-11 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2 justify-center")}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
-                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                    </Button>
-                  </Link>
-                );
-              })}
-              {/* Divider */}
-              {groupedItems.operations && !isCollapsed && <div className="my-4 border-t border-border/50" />}
-              {/* Operations */}
-              {groupedItems.operations?.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                    </Button>
-                  </Link>
-                );
-              })}
-              {/* Logistics */}
-              {groupedItems.logistics && !isCollapsed && (
-                <div className="px-2 py-2 mt-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Logística</h3>
-                </div>
-              )}
-              {groupedItems.logistics?.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2", item.isSubItem && !isCollapsed && "ml-4 w-[calc(100%-1rem)]", item.isSubItem && "h-9 text-sm")}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                    </Button>
-                  </Link>
-                );
-              })}
-              {/* Management */}
-              {groupedItems.management && !isCollapsed && (
-                <div className="px-2 py-2 mt-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gestión</h3>
-                </div>
-              )}
-              {groupedItems.management?.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                    </Button>
-                  </Link>
-                );
-              })}
-              {/* Training */}
-              {groupedItems.training?.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                    </Button>
-                  </Link>
-                );
-              })}
-              {/* Admin */}
-              {groupedItems.admin && !isCollapsed && (
-                <div className="px-2 py-2 mt-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administración</h3>
-                </div>
-              )}
-              {groupedItems.admin?.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn("w-full justify-start gap-3 h-10 sidebar-button", isActive && "bg-secondary font-medium shadow-sm", isCollapsed && "px-2")}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {!isCollapsed && <span>{t(item.translationKey)}</span>}
-                    </Button>
-                  </Link>
-                );
-              })}
-            </>
-          )}
+          {renderNavContent()}
         </nav>
       </ScrollArea>
 
@@ -248,9 +408,16 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
             variant="ghost"
             size="sm"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2 justify-center")}
+            className={cn(
+              "w-full justify-start gap-3 sidebar-button",
+              isCollapsed && "px-2 justify-center"
+            )}
           >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
             {!isCollapsed && <span>{t("changeTheme")}</span>}
           </Button>
         </div>
@@ -260,7 +427,10 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
             variant="ghost"
             size="sm"
             onClick={() => setLanguage(language === "es" ? "en" : "es")}
-            className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2 justify-center")}
+            className={cn(
+              "w-full justify-start gap-3 sidebar-button",
+              isCollapsed && "px-2 justify-center"
+            )}
           >
             <Languages className="h-4 w-4" />
             {!isCollapsed && <span>{t("changeLanguage")}</span>}
@@ -271,7 +441,10 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
           variant="ghost"
           size="sm"
           onClick={handleSignOut}
-          className={cn("w-full justify-start gap-3 sidebar-button", isCollapsed && "px-2 justify-center")}
+          className={cn(
+            "w-full justify-start gap-3 sidebar-button",
+            isCollapsed && "px-2 justify-center"
+          )}
         >
           <LogOut className="h-4 w-4" />
           {!isCollapsed && <span>{t("logout")}</span>}
@@ -280,4 +453,3 @@ export function Sidebar({ className, open, onOpenChange }: SidebarProps & { open
     </div>
   );
 }
-
