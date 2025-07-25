@@ -1,0 +1,754 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Trash2,
+  Home,
+  QrCode,
+  Scale,
+  Truck,
+  AlertTriangle,
+  BarChart3,
+  BookOpen,
+  Users,
+  Sun,
+  Moon,
+  Languages,
+  LogOut,
+  X,
+  Menu,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
+import { useTheme } from "next-themes";
+// Types
+export interface NavItem {
+  title: string;
+  translationKey: string;
+  href: string;
+  icon: any;
+  roles: string[];
+  module?: string;
+  group?: string;
+  isSubItem?: boolean;
+}
+
+export interface SidebarProps {
+  className?: string;
+}
+
+// Hook para detectar si es escritorio (md+)
+export function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const check = () =>
+      setIsDesktop(window.matchMedia("(min-width: 768px)").matches);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isDesktop;
+}
+
+export function Sidebar({
+  className,
+  open,
+  onOpenChange,
+}: SidebarProps & { open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  const [isCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const pathname = usePathname();
+  const { t, setLanguage, language } = useLanguage();
+  const { theme, setTheme } = useTheme();
+  const isMobile = !useIsDesktop();
+  // Log para depuración
+  useEffect(() => {
+    console.log("[Sidebar] user:", user);
+    if (user) {
+      console.log("[Sidebar] user.rol:", user.rol);
+    }
+  }, [user]);
+
+  // Example nav items (customize as needed)
+  const navItems: NavItem[] = [
+    {
+      title: "Dashboard",
+      translationKey: "dashboard",
+      href: "/dashboard",
+      icon: Home,
+      roles: [
+        "admin",
+        "user",
+        "generador",
+        "supervisor",
+        "transportista",
+        "gestor_externo",
+      ],
+      group: "main",
+    },
+    {
+      title: "Residuos",
+      translationKey: "residuos",
+      href: "/residuos",
+      icon: Trash2,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "operations",
+    },
+    {
+      title: "Etiquetas",
+      translationKey: "etiquetas",
+      href: "/etiquetas",
+      icon: QrCode,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "operations",
+    },
+    {
+      title: "Pesaje",
+      translationKey: "pesaje",
+      href: "/pesaje",
+      icon: Scale,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "operations",
+    },
+    {
+      title: "Entregas",
+      translationKey: "entregas",
+      href: "/entregas",
+      icon: Truck,
+      roles: ["admin", "user", "transportista", "supervisor"],
+      group: "logistics",
+    },
+    {
+      title: "Incidencias",
+      translationKey: "incidencias",
+      href: "/incidencias",
+      icon: AlertTriangle,
+      roles: ["admin", "user", "supervisor"],
+      group: "management",
+    },
+    {
+      title: "Reportes",
+      translationKey: "reportes",
+      href: "/reportes",
+      icon: BarChart3,
+      roles: ["admin", "user", "supervisor"],
+      group: "management",
+    },
+    {
+      title: "Capacitaciones",
+      translationKey: "capacitaciones",
+      href: "/capacitaciones",
+      icon: BookOpen,
+      roles: ["admin", "user", "generador", "supervisor"],
+      group: "training",
+    },
+    {
+      title: "Usuarios",
+      translationKey: "usuarios",
+      href: "/usuarios",
+      icon: Users,
+      roles: ["admin"],
+      group: "admin",
+    },
+  ];
+
+  // Permission check (customize as needed)
+  const canAccessItem = (item: NavItem) => {
+    if (!user) return false;
+    if (!item.roles.includes(user.rol)) return false;
+    return true;
+  };
+  const filteredNavItems = navItems.filter(canAccessItem);
+  const groupedItems = filteredNavItems.reduce((groups, item) => {
+    const group = item.group || "other";
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(item);
+    return groups;
+  }, {} as Record<string, NavItem[]>);
+
+  // Sign out handler
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      window.location.href = "/auth/login";
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  // Helper function to render navigation content
+  const renderNavContent = () => {
+    if (!user) {
+      return (
+        <div className="text-center text-muted-foreground py-8">
+          <p>No hay usuario autenticado.</p>
+        </div>
+      );
+    }
+
+    if (filteredNavItems.length === 0) {
+      return (
+        <div className="text-center text-muted-foreground py-8">
+          <p>No tienes permisos para ver módulos.</p>
+          <p>
+            Tu rol: <span className="font-mono">{user.rol}</span>
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {/* Main */}
+        {groupedItems.main?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-11 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2 justify-center"
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Rest of navigation items... */}
+      </>
+    );
+  };
+
+  // Check loading state first
+  if (!user) {
+    return (
+      <>
+        {/* Mobile Loading */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed top-4 left-4 z-50 md:hidden"
+            disabled
+          >
+            <Menu className="h-4 w-4 animate-pulse" />
+          </Button>
+        )}
+        
+        {/* Desktop Loading */}
+        {!isMobile && (
+          <div className="flex h-full w-64 flex-col border-r bg-background">
+            <div className="flex h-16 items-center justify-center border-b">
+              <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+            </div>
+            <div className="flex-1 space-y-3 p-4">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div key={`loading-skeleton-${idx}`} className="h-10 animate-pulse rounded bg-muted" />
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Mobile: Sheet Drawer
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50 md:hidden"
+          onClick={() => setIsMobileOpen(true)}
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+
+        {/* Mobile Sheet Drawer */}
+        <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+          <SheetContent 
+            side="left" 
+            className="w-64 p-0"
+          >
+            <div className="flex h-full flex-col">
+              {/* Header */}
+              <div className="flex h-16 items-center border-b px-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <Trash2 className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold">{t("appName")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("appSubtitle")}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => setIsMobileOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Navigation */}
+              <ScrollArea className="flex-1 px-3 py-4">
+                <nav className="space-y-1">
+                  {renderNavContent()}
+                </nav>
+              </ScrollArea>
+
+              {/* Footer */}
+              <div className="border-t p-4">
+                {/* Theme Toggle */}
+                <div className="mb-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    className="w-full justify-start gap-3"
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="h-4 w-4" />
+                    ) : (
+                      <Moon className="h-4 w-4" />
+                    )}
+                    <span>{t("changeTheme")}</span>
+                  </Button>
+                </div>
+                {/* Language Toggle */}
+                <div className="mb-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLanguage(language === "es" ? "en" : "es")}
+                    className="w-full justify-start gap-3"
+                  >
+                    <Languages className="h-4 w-4" />
+                    <span>{t("changeLanguage")}</span>
+                  </Button>
+                </div>
+                {/* Logout */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="w-full justify-start gap-3"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>{t("logout")}</span>
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Sign out handler
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      window.location.href = "/auth/login";
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  // Helper function to render navigation content
+  const renderNavContent = () => {
+    if (!user) {
+      return (
+        <div className="text-center text-muted-foreground py-8">
+          <p>No hay usuario autenticado.</p>
+        </div>
+      );
+    }
+
+    if (filteredNavItems.length === 0) {
+      return (
+        <div className="text-center text-muted-foreground py-8">
+          <p>No tienes permisos para ver módulos.</p>
+          <p>
+            Tu rol: <span className="font-mono">{user.rol}</span>
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {/* Main */}
+        {groupedItems.main?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-11 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2 justify-center"
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Divider */}
+        {groupedItems.operations && !isCollapsed && (
+          <div className="my-4 border-t border-border/50" />
+        )}
+        {/* Operations */}
+        {groupedItems.operations?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2",
+                  item.isSubItem &&
+                    !isCollapsed &&
+                    "ml-4 w-[calc(100%-1rem)]",
+                  item.isSubItem && "h-9 text-sm"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Logistics */}
+        {groupedItems.logistics && !isCollapsed && (
+          <div className="px-2 py-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Logística
+            </h3>
+          </div>
+        )}
+        {groupedItems.logistics?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2",
+                  item.isSubItem &&
+                    !isCollapsed &&
+                    "ml-4 w-[calc(100%-1rem)]",
+                  item.isSubItem && "h-9 text-sm"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Management */}
+        {groupedItems.management && !isCollapsed && (
+          <div className="px-2 py-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Gestión
+            </h3>
+          </div>
+        )}
+        {groupedItems.management?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Training */}
+        {groupedItems.training?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+        {/* Admin */}
+        {groupedItems.admin && !isCollapsed && (
+          <div className="px-2 py-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Administración
+            </h3>
+          </div>
+        )}
+        {groupedItems.admin?.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  isActive && "bg-secondary font-medium shadow-sm",
+                  isCollapsed && "px-2"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>{t(item.translationKey)}</span>}
+              </Button>
+            </Link>
+          );
+        })}
+      </>
+    );
+  };
+
+  // Sidebar content component
+  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex h-16 items-center border-b px-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Trash2 className="h-4 w-4" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{t("appName")}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("appSubtitle")}
+              </span>
+            </div>
+          )}
+        </div>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-4">
+        <nav className="space-y-1">
+          {renderNavContent()}
+        </nav>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="border-t p-4">
+        {/* Theme Toggle */}
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className={cn(
+              "w-full justify-start gap-3 sidebar-button",
+              isCollapsed && "px-2 justify-center"
+            )}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            {!isCollapsed && <span>{t("changeTheme")}</span>}
+          </Button>
+        </div>
+        {/* Language Toggle */}
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLanguage(language === "es" ? "en" : "es")}
+            className={cn(
+              "w-full justify-start gap-3 sidebar-button",
+              isCollapsed && "px-2 justify-center"
+            )}
+          >
+            <Languages className="h-4 w-4" />
+            {!isCollapsed && <span>{t("changeLanguage")}</span>}
+          </Button>
+        </div>
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className={cn(
+            "w-full justify-start gap-3 sidebar-button",
+            isCollapsed && "px-2 justify-center"
+          )}
+        >
+          <LogOut className="h-4 w-4" />
+          {!isCollapsed && <span>{t("logout")}</span>}
+        </Button>
+      </div>
+    </div>
+  );
+  return (
+    <div
+      className={cn(
+        "flex h-screen flex-col bg-background border-r w-64 min-w-[220px] transition-all duration-200 md:sticky top-0",
+        className,
+        isCollapsed && "w-20 min-w-[60px]"
+      )}
+    >
+      {/* Header */}
+      <div className="flex h-16 items-center border-b px-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Trash2 className="h-4 w-4" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col animate-in slide-in-from-left-2 duration-200">
+              <span className="text-sm font-semibold">{t("appName")}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("appSubtitle")}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
+        <nav className="space-y-1">
+          {renderNavContent()}
+        </nav>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="border-t p-4">
+        {/* Theme Toggle */}
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className={cn(
+              "w-full justify-start gap-3 sidebar-button",
+              isCollapsed && "px-2 justify-center"
+            )}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            {!isCollapsed && <span>{t("changeTheme")}</span>}
+          </Button>
+        </div>
+        {/* Language Toggle */}
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLanguage(language === "es" ? "en" : "es")}
+            className={cn(
+              "w-full justify-start gap-3 sidebar-button",
+              isCollapsed && "px-2 justify-center"
+            )}
+          >
+            <Languages className="h-4 w-4" />
+            {!isCollapsed && <span>{t("changeLanguage")}</span>}
+          </Button>
+        </div>
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className={cn(
+            "w-full justify-start gap-3 sidebar-button",
+            isCollapsed && "px-2 justify-center"
+          )}
+        >
+          <LogOut className="h-4 w-4" />
+          {!isCollapsed && <span>{t("logout")}</span>}
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Desktop: Sticky Sidebar
+  return (
+    <div
+      className={cn(
+        "sticky top-0 h-screen bg-background border-r transition-all duration-300 flex flex-col",
+        isCollapsed ? "w-16" : "w-64"
+      )}
+    >
+      <SidebarContent />
+    </div>
+  );
+}

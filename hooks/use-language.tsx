@@ -1,306 +1,83 @@
-"use client";
+﻿"use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useMemo } from "react"
 
-type Language = "es" | "en";
+type Language = "es" | "en"
 
 interface LanguageContextType {
-  language: Language;
-  setLanguage: (language: Language) => void;
-  t: (key: string) => string;
+  language: Language
+  setLanguage: (lang: Language) => void
+  t: (key: string) => string
 }
+
+const LanguageContext = createContext<LanguageContextType | null>(null)
 
 const translations = {
   es: {
     dashboard: "Dashboard",
+    search: "Buscar...",
+    settings: "Configuración",
+    profile: "Perfil",
+    help: "Ayuda",
+    logout: "Cerrar sesión",
+    home: "Inicio",
     residuos: "Residuos",
-    nuevoResiduo: "Nuevo Residuo",
     etiquetas: "Etiquetas",
-    generarEtiqueta: "Generar Etiqueta", 
     pesaje: "Pesaje",
     entregas: "Entregas",
-    nuevaEntrega: "Nueva Entrega",
-    capacitaciones: "Capacitaciones",
     incidencias: "Incidencias",
-    cumplimiento: "Cumplimiento",
     reportes: "Reportes",
-    usuarios: "Usuarios",
-    search: "Buscar...",
-    notifications: "Notificaciones",
-    profile: "Perfil",
-    settings: "Configuración",
-    logout: "Cerrar sesión",
-    language: "Idioma",
-    theme: "Tema",
-    light: "Claro",
-    dark: "Oscuro",
-    toggleTheme: "Cambiar tema",
-    changeTheme: "Cambiar tema",
-    changeLanguage: "Cambiar idioma",
-    appName: "Residuos Hospitalarios",
-    appSubtitle: "Gestión",
-    generador: "Generador",
-    supervisor: "Supervisor", 
-    transportista: "Transportista",
-    gestor_externo: "Gestor Externo",
-    gestorexterno: "Gestor Externo",
-    admin: "Administrador",
-    openMenu: "Abrir menú",
-    loadingDashboard: "Cargando dashboard...",
-    residuosGenerados: "Residuos Generados",
-    etiquetasEmitidas: "Etiquetas Emitidas",
-    entregasCompletadas: "Entregas Completadas",
-    incidenciasActivas: "Incidencias Activas",
-    registrarResiduo: "Registrar Residuo",
-    crearRegistroResiduo: "Crear nuevo registro de residuo hospitalario",
-    generarEtiqueta: "Generar Etiqueta",
-    crearEtiquetaQR: "Crear etiqueta QR para residuo",
-    nuevaEntrega: "Nueva Entrega",
-    programarEntrega: "Programar entrega de residuos",
-    verReportes: "Ver Reportes",
-    consultarReportes: "Consultar reportes de cumplimiento",
-    gestionResiduos: "Gestión de Residuos",
-    cicloResiduos: "Control completo del ciclo de vida de residuos hospitalarios",
-    clasificacionCategorias: "Clasificación por categorías",
-    seguimientoTiempoReal: "Seguimiento en tiempo real",
-    historialCompleto: "Historial completo",
-    activo: "Activo",
-    sistemaEtiquetado: "Sistema de Etiquetado",
-    generacionQR: "Generación de códigos QR para trazabilidad",
-    codigosQRUnicos: "Códigos QR únicos",
-    infoDetallada: "Información detallada",
-    escaneoMovil: "Escaneo móvil",
-    controlPesaje: "Control de Pesaje",
-    registroPesos: "Registro preciso de pesos y medidas",
-    pesajeAutomatico: "Pesaje automático",
-    validacionDatos: "Validación de datos",
-    controlCalidad: "Control de calidad",
-    gestionEntregas: "Gestión de Entregas",
-    logisticaTransporte: "Logística y transporte de residuos",
-    programacionRutas: "Programación de rutas",
-    seguimientoGPS: "Seguimiento GPS",
-    confirmacionDigital: "Confirmación digital",
-    sistemaIncidencias: "Sistema de Incidencias",
-    gestionEventos: "Gestión de eventos y alertas",
-    alertasAutomaticas: "Alertas automáticas",
-    clasificacionPrioridad: "Clasificación por prioridad",
-    seguimientoResolucion: "Seguimiento de resolución",
-    reportesCumplimiento: "Reportes y Cumplimiento",
-    analisisReportes: "Análisis y reportes normativos",
-    dashboardsInteractivos: "Dashboards interactivos",
-    exportacionMultiple: "Exportación múltiple",
-    cumplimientoNormativo: "Cumplimiento normativo",
     capacitaciones: "Capacitaciones",
-    formacionPersonal: "Formación del personal",
-    cursosInteractivos: "Cursos interactivos",
-    certificaciones: "Certificaciones",
-    seguimientoProgreso: "Seguimiento de progreso",
-    cumplimientoNormativo: "Cumplimiento Normativo",
-    verificacionISO: "Verificación de estándares ISO",
-    auditoriasAutomaticas: "Auditorías automáticas",
-    indicadoresCumplimiento: "Indicadores de cumplimiento",
-    planesMejora: "Planes de mejora",
-    welcome: "¡Bienvenido",
-    sistemaGestionResiduos: "Sistema de Gestión de Residuos Hospitalarios - Panel de Control",
-    sistemaOperativo: "Sistema Operativo",
-    accionesRapidas: "Acciones Rápidas",
-    accesosDirectos: "Accesos directos a las funciones más utilizadas",
-    modulosSistema: "Módulos del Sistema",
-    resumenFuncionalidades: "Resumen completo de todas las funcionalidades disponibles",
-    estadoCumplimiento: "Estado de Cumplimiento",
-    normativaISO: "Normativa ISO 14001",
-    capacitacionPersonal: "Capacitación Personal",
-    actividadReciente: "Actividad Reciente",
-    entregaCompletadaLote: "Entrega completada - Lote #1234",
-    hace2h: "Hace 2h",
-    nuevoResiduoRegistrado: "Nuevo residuo registrado - Cat. III",
-    hace4h: "Hace 4h",
-    incidenciaReportadaSala: "Incidencia reportada - Sala 301",
-    hace6h: "Hace 6h",
-    capacitacionCompletada: "Capacitación completada",
-    hace1d: "Hace 1d",
-    registroSeguimientoResiduos: "Registro y seguimiento de residuos hospitalarios",
-    totalResiduos: "Total Residuos",
-    pendientes: "Pendientes",
-    etiquetados: "Etiquetados",
-    verDetalles: "Ver detalles",
-    editar: "Editar",
-    gestionEtiquetas: "Gestión de Etiquetas",
-    registroSeguimientoEtiquetas: "Códigos QR y de barras para trazabilidad de residuos",
-    totalEtiquetas: "Total Etiquetas",
-    entregasGestoresExternos: "Entregas a gestores externos autorizados",
-    totalEntregas: "Total Entregas",
-    gestionIncidencias: "Gestión de Incidencias",
-    registroSeguimientoIncidencias: "Registro y seguimiento de incidencias del sistema",
-    nuevaIncidencia: "Reportar Incidencia",
-    totalIncidencias: "Total Incidencias",
-    gestionPesaje: "Gestión de Pesaje",
-    registroSeguimientoPesaje: "Registro de pesos y verificación de residuos",
-    nuevoPesaje: "Nuevo Pesaje",
-    totalPesajes: "Total Pesajes",
+    usuarios: "Usuarios",
+    newWasteCollection: "Nueva recolección",
+    auditCompleted: "Auditoría completada",
+    incidentReported: "Incidente reportado"
   },
   en: {
     dashboard: "Dashboard",
-    residuos: "Waste",
-    nuevoResiduo: "New Waste",
-    etiquetas: "Labels",
-    generarEtiqueta: "Generate Label",
-    pesaje: "Weighing", 
-    entregas: "Deliveries",
-    nuevaEntrega: "New Delivery",
-    capacitaciones: "Training",
-    incidencias: "Incidents",
-    cumplimiento: "Compliance",
-    reportes: "Reports",
-    usuarios: "Users",
     search: "Search...",
-    notifications: "Notifications",
-    profile: "Profile",
     settings: "Settings",
-    logout: "Sign out",
-    language: "Language",
-    theme: "Theme",
-    light: "Light",
-    dark: "Dark",
-    toggleTheme: "Toggle theme",
-    changeTheme: "Change theme",
-    changeLanguage: "Change language",
-    appName: "Hospital Waste",
-    appSubtitle: "Management",
-    generador: "Generator",
-    supervisor: "Supervisor",
-    transportista: "Transporter", 
-    gestor_externo: "External Manager",
-    gestorexterno: "External Manager",
-    admin: "Administrator",
-    openMenu: "Open menu",
-    loadingDashboard: "Loading dashboard...",
-    residuosGenerados: "Generated Waste",
-    etiquetasEmitidas: "Labels Issued",
-    entregasCompletadas: "Completed Deliveries",
-    incidenciasActivas: "Active Incidents",
-    registrarResiduo: "Register Waste",
-    crearRegistroResiduo: "Create new hospital waste record",
-    generarEtiqueta: "Generate Label",
-    crearEtiquetaQR: "Create QR label for waste",
-    nuevaEntrega: "New Delivery",
-    programarEntrega: "Schedule waste delivery",
-    verReportes: "View Reports",
-    consultarReportes: "View compliance reports",
-    gestionResiduos: "Waste Management",
-    cicloResiduos: "Full control of the hospital waste lifecycle",
-    clasificacionCategorias: "Category classification",
-    seguimientoTiempoReal: "Real-time tracking",
-    historialCompleto: "Full history",
-    activo: "Active",
-    sistemaEtiquetado: "Labeling System",
-    generacionQR: "QR code generation for traceability",
-    codigosQRUnicos: "Unique QR codes",
-    infoDetallada: "Detailed information",
-    escaneoMovil: "Mobile scanning",
-    controlPesaje: "Weighing Control",
-    registroPesos: "Accurate weight and measurement recording",
-    pesajeAutomatico: "Automatic weighing",
-    validacionDatos: "Data validation",
-    controlCalidad: "Quality control",
-    gestionEntregas: "Delivery Management",
-    logisticaTransporte: "Waste logistics and transport",
-    programacionRutas: "Route scheduling",
-    seguimientoGPS: "GPS tracking",
-    confirmacionDigital: "Digital confirmation",
-    sistemaIncidencias: "Incident System",
-    gestionEventos: "Event and alert management",
-    alertasAutomaticas: "Automatic alerts",
-    clasificacionPrioridad: "Priority classification",
-    seguimientoResolucion: "Resolution tracking",
-    reportesCumplimiento: "Reports & Compliance",
-    analisisReportes: "Regulatory analysis and reports",
-    dashboardsInteractivos: "Interactive dashboards",
-    exportacionMultiple: "Multiple export",
-    cumplimientoNormativo: "Regulatory compliance",
+    profile: "Profile",
+    help: "Help",
+    logout: "Logout",
+    home: "Home",
+    residuos: "Waste",
+    etiquetas: "Labels",
+    pesaje: "Weighing",
+    entregas: "Deliveries",
+    incidencias: "Incidents",
+    reportes: "Reports",
     capacitaciones: "Training",
-    formacionPersonal: "Staff training",
-    cursosInteractivos: "Interactive courses",
-    certificaciones: "Certifications",
-    seguimientoProgreso: "Progress tracking",
-    cumplimientoNormativo: "Regulatory Compliance",
-    verificacionISO: "ISO standards verification",
-    auditoriasAutomaticas: "Automatic audits",
-    indicadoresCumplimiento: "Compliance indicators",
-    planesMejora: "Improvement plans",
-    welcome: "Welcome",
-    sistemaGestionResiduos: "Hospital Waste Management System - Control Panel",
-    sistemaOperativo: "Operating System",
-    accionesRapidas: "Quick Actions",
-    accesosDirectos: "Shortcuts to the most used functions",
-    modulosSistema: "System Modules",
-    resumenFuncionalidades: "Full summary of all available features",
-    estadoCumplimiento: "Compliance Status",
-    normativaISO: "ISO 14001 Standard",
-    capacitacionPersonal: "Staff Training",
-    actividadReciente: "Recent Activity",
-    entregaCompletadaLote: "Delivery completed - Batch #1234",
-    hace2h: "2h ago",
-    nuevoResiduoRegistrado: "New waste registered - Cat. III",
-    hace4h: "4h ago",
-    incidenciaReportadaSala: "Incident reported - Room 301",
-    hace6h: "6h ago",
-    capacitacionCompletada: "Training completed",
-    hace1d: "1d ago",
-    registroSeguimientoResiduos: "Waste registration and tracking",
-    totalResiduos: "Total Waste",
-    pendientes: "Pending",
-    etiquetados: "Labeled",
-    verDetalles: "View details",
-    editar: "Edit",
-    gestionEtiquetas: "Label Management",
-    registroSeguimientoEtiquetas: "QR and barcode tracking for waste",
-    totalEtiquetas: "Total Labels",
-    entregasGestoresExternos: "Deliveries to authorized external managers",
-    totalEntregas: "Total Deliveries",
-    gestionIncidencias: "Incident Management",
-    registroSeguimientoIncidencias: "System incident registration and tracking",
-    nuevaIncidencia: "Report Incident",
-    totalIncidencias: "Total Incidents",
-    gestionPesaje: "Weighing Management",
-    registroSeguimientoPesaje: "Weight registration and waste verification",
-    nuevoPesaje: "New Weighing",
-    totalPesajes: "Total Weighings",
-  },
-};
+    usuarios: "Users",
+    newWasteCollection: "New waste collection",
+    auditCompleted: "Audit completed",
+    incidentReported: "Incident reported"
+  }
+}
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+export function LanguageProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+  const [language, setLanguage] = useState<Language>("es")
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("es");
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("language") as Language;
-    if (savedLanguage && (savedLanguage === "es" || savedLanguage === "en")) {
-      setLanguageState(savedLanguage);
+  const contextValue = useMemo(() => {
+    const t = (key: string): string => {
+      const translationsForLanguage = translations[language]
+      return (translationsForLanguage as any)[key] || key
     }
-  }, []);
 
-  const setLanguage = (newLanguage: Language) => {
-    setLanguageState(newLanguage);
-    localStorage.setItem("language", newLanguage);
-  };
-
-  const t = (key: string): string => {
-    return (translations[language] as any)[key] || key;
-  };
+    return { language, setLanguage, t }
+  }, [language])
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
-  );
+  )
 }
 
 export function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
+  const context = useContext(LanguageContext)
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider")
   }
-  return context;
+  return context
 }

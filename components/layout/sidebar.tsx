@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Trash2,
   Home,
@@ -16,168 +17,161 @@ import {
   Moon,
   Languages,
   LogOut,
+  X,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { useTheme } from "next-themes";
+
 // Types
 export interface NavItem {
-  title: string;
-  translationKey: string;
   href: string;
-  icon: any;
+  translationKey: string;
+  icon: React.ComponentType<{ className?: string }>;
   roles: string[];
-  module?: string;
-  group?: string;
+  group: "main" | "operations" | "logistics" | "management" | "training" | "admin";
   isSubItem?: boolean;
 }
 
-export interface SidebarProps {
-  className?: string;
+interface SidebarProps {
+  readonly className?: string;
 }
 
-// Hook para detectar si es escritorio (md+)
-export function useIsDesktop() {
+// Custom hook to detect desktop size
+export const useIsDesktop = () => {
   const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const check = () =>
-      setIsDesktop(window.matchMedia("(min-width: 768px)").matches);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-  return isDesktop;
-}
 
-export function Sidebar({
-  className,
-  open,
-  onOpenChange,
-}: SidebarProps & { open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  useEffect(() => {
+    const checkSize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    
+    checkSize();
+    window.addEventListener("resize", checkSize);
+    return () => window.removeEventListener("resize", checkSize);
+  }, []);
+  
+  return isDesktop;
+};
+
+export function Sidebar({ className }: SidebarProps) {
   const [isCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const { t, setLanguage, language } = useLanguage();
   const { theme, setTheme } = useTheme();
-  // Log para depuración
-  useEffect(() => {
-    console.log("[Sidebar] user:", user);
-    if (user) {
-      console.log("[Sidebar] user.rol:", user.rol);
-    }
-  }, [user]);
+  const isDesktop = useIsDesktop();
 
-  // Example nav items (customize as needed)
+  // Navigation items configuration
   const navItems: NavItem[] = [
     {
-      title: "Dashboard",
-      translationKey: "dashboard",
       href: "/dashboard",
+      translationKey: "dashboard",
       icon: Home,
-      roles: [
-        "admin",
-        "user",
-        "generador",
-        "supervisor",
-        "transportista",
-        "gestor_externo",
-      ],
+      roles: ["admin", "gestor", "operador", "auditor"],
       group: "main",
     },
     {
-      title: "Residuos",
-      translationKey: "residuos",
       href: "/residuos",
+      translationKey: "medicalWaste",
       icon: Trash2,
-      roles: ["admin", "user", "generador", "supervisor"],
+      roles: ["admin", "gestor", "operador"],
       group: "operations",
     },
     {
-      title: "Etiquetas",
-      translationKey: "etiquetas",
       href: "/etiquetas",
+      translationKey: "labels",
       icon: QrCode,
-      roles: ["admin", "user", "generador", "supervisor"],
+      roles: ["admin", "gestor", "operador"],
       group: "operations",
     },
     {
-      title: "Pesaje",
-      translationKey: "pesaje",
       href: "/pesaje",
+      translationKey: "weighing",
       icon: Scale,
-      roles: ["admin", "user", "generador", "supervisor"],
+      roles: ["admin", "gestor", "operador"],
       group: "operations",
     },
     {
-      title: "Entregas",
-      translationKey: "entregas",
+      href: "/incidencias",
+      translationKey: "incidents",
+      icon: AlertTriangle,
+      roles: ["admin", "gestor", "operador", "auditor"],
+      group: "operations",
+    },
+    {
       href: "/entregas",
+      translationKey: "deliveries",
       icon: Truck,
-      roles: ["admin", "user", "transportista", "supervisor"],
+      roles: ["admin", "gestor", "operador"],
       group: "logistics",
     },
     {
-      title: "Incidencias",
-      translationKey: "incidencias",
-      href: "/incidencias",
-      icon: AlertTriangle,
-      roles: ["admin", "user", "supervisor"],
-      group: "management",
-    },
-    {
-      title: "Reportes",
-      translationKey: "reportes",
-      href: "/reportes",
+      href: "/cumplimiento",
+      translationKey: "compliance",
       icon: BarChart3,
-      roles: ["admin", "user", "supervisor"],
+      roles: ["admin", "gestor", "auditor"],
       group: "management",
     },
     {
-      title: "Capacitaciones",
-      translationKey: "capacitaciones",
+      href: "/reportes",
+      translationKey: "reports",
+      icon: BarChart3,
+      roles: ["admin", "gestor", "auditor"],
+      group: "management",
+    },
+    {
       href: "/capacitaciones",
+      translationKey: "training",
       icon: BookOpen,
-      roles: ["admin", "user", "generador", "supervisor"],
+      roles: ["admin", "gestor"],
       group: "training",
     },
     {
-      title: "Usuarios",
-      translationKey: "usuarios",
       href: "/usuarios",
+      translationKey: "users",
       icon: Users,
       roles: ["admin"],
       group: "admin",
     },
   ];
 
-  // Permission check (customize as needed)
-  const canAccessItem = (item: NavItem) => {
-    if (!user) return false;
-    if (!item.roles.includes(user.rol)) return false;
-    return true;
-  };
-  const filteredNavItems = navItems.filter(canAccessItem);
-  const groupedItems = filteredNavItems.reduce((groups, item) => {
-    const group = item.group || "other";
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(item);
-    return groups;
-  }, {} as Record<string, NavItem[]>);
+  // Filter navigation items based on user role
+  const filteredNavItems = useMemo(() => {
+    return navItems.filter((item) => {
+      if (!user) return false;
+      return item.roles.includes(user.rol);
+    });
+  }, [user, navItems]);
 
-  // Sign out handler
+  // Group navigation items by category
+  const groupedItems = useMemo(() => {
+    return filteredNavItems.reduce((groups, item) => {
+      const group = item.group;
+      if (!groups[group]) groups[group] = [];
+      groups[group].push(item);
+      return groups;
+    }, {} as Record<string, NavItem[]>);
+  }, [filteredNavItems]);
+
+  // Handle sign out
   const handleSignOut = async () => {
     try {
       await signOut();
-      window.location.href = "/auth/login";
+      router.push("/auth/login");
     } catch (error) {
       console.error("Error signing out:", error);
     }
   };
 
-  // Helper function to render navigation content
+  // Render navigation content
   const renderNavContent = () => {
     if (!user) {
       return (
@@ -191,27 +185,23 @@ export function Sidebar({
       return (
         <div className="text-center text-muted-foreground py-8">
           <p>No tienes permisos para ver módulos.</p>
-          <p>
-            Tu rol: <span className="font-mono">{user.rol}</span>
-          </p>
+          <p>Tu rol: <span className="font-mono">{user.rol}</span></p>
         </div>
       );
     }
 
     return (
       <>
-        {/* Main */}
+        {/* Main Navigation */}
         {groupedItems.main?.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 h-11 sidebar-button",
+                  "w-full justify-start gap-3 h-11",
                   isActive && "bg-secondary font-medium shadow-sm",
                   isCollapsed && "px-2 justify-center"
                 )}
@@ -222,28 +212,22 @@ export function Sidebar({
             </Link>
           );
         })}
-        {/* Divider */}
+        
+        {/* Operations Section */}
         {groupedItems.operations && !isCollapsed && (
           <div className="my-4 border-t border-border/50" />
         )}
-        {/* Operations */}
         {groupedItems.operations?.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  "w-full justify-start gap-3 h-10",
                   isActive && "bg-secondary font-medium shadow-sm",
-                  isCollapsed && "px-2",
-                  item.isSubItem &&
-                    !isCollapsed &&
-                    "ml-4 w-[calc(100%-1rem)]",
-                  item.isSubItem && "h-9 text-sm"
+                  isCollapsed && "px-2"
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -252,7 +236,8 @@ export function Sidebar({
             </Link>
           );
         })}
-        {/* Logistics */}
+        
+        {/* Logistics Section */}
         {groupedItems.logistics && !isCollapsed && (
           <div className="px-2 py-2 mt-4">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -262,21 +247,15 @@ export function Sidebar({
         )}
         {groupedItems.logistics?.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  "w-full justify-start gap-3 h-10",
                   isActive && "bg-secondary font-medium shadow-sm",
-                  isCollapsed && "px-2",
-                  item.isSubItem &&
-                    !isCollapsed &&
-                    "ml-4 w-[calc(100%-1rem)]",
-                  item.isSubItem && "h-9 text-sm"
+                  isCollapsed && "px-2"
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -285,7 +264,8 @@ export function Sidebar({
             </Link>
           );
         })}
-        {/* Management */}
+        
+        {/* Management Section */}
         {groupedItems.management && !isCollapsed && (
           <div className="px-2 py-2 mt-4">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -295,15 +275,13 @@ export function Sidebar({
         )}
         {groupedItems.management?.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  "w-full justify-start gap-3 h-10",
                   isActive && "bg-secondary font-medium shadow-sm",
                   isCollapsed && "px-2"
                 )}
@@ -314,18 +292,17 @@ export function Sidebar({
             </Link>
           );
         })}
-        {/* Training */}
+        
+        {/* Training Section */}
         {groupedItems.training?.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  "w-full justify-start gap-3 h-10",
                   isActive && "bg-secondary font-medium shadow-sm",
                   isCollapsed && "px-2"
                 )}
@@ -336,7 +313,8 @@ export function Sidebar({
             </Link>
           );
         })}
-        {/* Admin */}
+        
+        {/* Admin Section */}
         {groupedItems.admin && !isCollapsed && (
           <div className="px-2 py-2 mt-4">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -346,15 +324,13 @@ export function Sidebar({
         )}
         {groupedItems.admin?.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 h-10 sidebar-button",
+                  "w-full justify-start gap-3 h-10",
                   isActive && "bg-secondary font-medium shadow-sm",
                   isCollapsed && "px-2"
                 )}
@@ -368,87 +344,193 @@ export function Sidebar({
       </>
     );
   };
+
+  // Loading state
+  if (!user) {
+    return (
+      <>
+        {!isDesktop && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed top-4 left-4 z-50 md:hidden"
+            disabled
+          >
+            <Menu className="h-4 w-4 animate-pulse" />
+          </Button>
+        )}
+        {isDesktop && (
+          <div className="flex h-full w-64 flex-col border-r bg-background">
+            <div className="flex h-16 items-center justify-center border-b">
+              <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+            </div>
+            <div className="flex-1 space-y-3 p-4">
+              {Array.from({ length: 6 }, (_, idx) => (
+                <div key={`loading-skeleton-item-${idx}`} className="h-10 animate-pulse rounded bg-muted" />
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Mobile view with Sheet
+  if (!isDesktop) {
+    return (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50 md:hidden"
+          onClick={() => setIsMobileOpen(true)}
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+
+        <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+          <SheetContent side="left" className="w-64 p-0">
+            <div className="flex h-full flex-col">
+              {/* Header */}
+              <div className="flex h-16 items-center border-b px-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <Trash2 className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold">{t("appName")}</span>
+                    <span className="text-xs text-muted-foreground">{t("appSubtitle")}</span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => setIsMobileOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Navigation */}
+              <ScrollArea className="flex-1 px-3 py-4">
+                <nav className="space-y-1">{renderNavContent()}</nav>
+              </ScrollArea>
+
+              {/* Footer */}
+              <div className="border-t p-4">
+                <div className="mb-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    className="w-full justify-start gap-3"
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span>{t("changeTheme")}</span>
+                  </Button>
+                </div>
+                <div className="mb-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLanguage(language === "es" ? "en" : "es")}
+                    className="w-full justify-start gap-3"
+                  >
+                    <Languages className="h-4 w-4" />
+                    <span>{t("changeLanguage")}</span>
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="w-full justify-start gap-3"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>{t("logout")}</span>
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Desktop view
   return (
     <div
       className={cn(
-        "flex h-screen flex-col bg-background border-r w-64 min-w-[220px] transition-all duration-200 sticky top-0",
-        className,
-        isCollapsed && "w-20 min-w-[60px]"
+        "sticky top-0 h-screen bg-background border-r transition-all duration-300 flex flex-col",
+        isCollapsed ? "w-16" : "w-64",
+        className
       )}
     >
-      {/* Header */}
-      <div className="flex h-16 items-center border-b px-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Trash2 className="h-4 w-4" />
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col animate-in slide-in-from-left-2 duration-200">
-              <span className="text-sm font-semibold">{t("appName")}</span>
-              <span className="text-xs text-muted-foreground">
-                {t("appSubtitle")}
-              </span>
+      <div className="flex h-full flex-col">
+        {/* Header */}
+        <div className="flex h-16 items-center border-b px-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Trash2 className="h-4 w-4" />
             </div>
-          )}
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{t("appName")}</span>
+                <span className="text-xs text-muted-foreground">{t("appSubtitle")}</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
-        <nav className="space-y-1">
-          {renderNavContent()}
-        </nav>
-      </ScrollArea>
+        {/* Navigation */}
+        <ScrollArea className="flex-1 px-3 py-4">
+          <nav className="space-y-1">{renderNavContent()}</nav>
+        </ScrollArea>
 
-      {/* Footer */}
-      <div className="border-t p-4">
-        {/* Theme Toggle */}
-        <div className="mb-3">
+        {/* Footer */}
+        <div className="border-t p-4">
+          <div className="mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className={cn(
+                "w-full justify-start gap-3",
+                isCollapsed && "px-2 justify-center"
+              )}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {!isCollapsed && <span>{t("changeTheme")}</span>}
+            </Button>
+          </div>
+          <div className="mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLanguage(language === "es" ? "en" : "es")}
+              className={cn(
+                "w-full justify-start gap-3",
+                isCollapsed && "px-2 justify-center"
+              )}
+            >
+              <Languages className="h-4 w-4" />
+              {!isCollapsed && <span>{t("changeLanguage")}</span>}
+            </Button>
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onClick={handleSignOut}
             className={cn(
-              "w-full justify-start gap-3 sidebar-button",
+              "w-full justify-start gap-3",
               isCollapsed && "px-2 justify-center"
             )}
           >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-            {!isCollapsed && <span>{t("changeTheme")}</span>}
+            <LogOut className="h-4 w-4" />
+            {!isCollapsed && <span>{t("logout")}</span>}
           </Button>
         </div>
-        {/* Language Toggle */}
-        <div className="mb-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLanguage(language === "es" ? "en" : "es")}
-            className={cn(
-              "w-full justify-start gap-3 sidebar-button",
-              isCollapsed && "px-2 justify-center"
-            )}
-          >
-            <Languages className="h-4 w-4" />
-            {!isCollapsed && <span>{t("changeLanguage")}</span>}
-          </Button>
-        </div>
-        {/* Logout */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          className={cn(
-            "w-full justify-start gap-3 sidebar-button",
-            isCollapsed && "px-2 justify-center"
-          )}
-        >
-          <LogOut className="h-4 w-4" />
-          {!isCollapsed && <span>{t("logout")}</span>}
-        </Button>
       </div>
     </div>
   );
