@@ -8,13 +8,13 @@ import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/hooks/use-language"
 import { supabase } from "@/lib/supabase"
 import { getCurrentUser } from "@/lib/auth"
+import { WASTE_TYPES } from "@/lib/constants"
 
-const wasteTypes = [
-  { value: "biologico", labelKey: "Biológico" },
-  { value: "quimico", labelKey: "Químico" },
-  { value: "punzocortante", labelKey: "Punzocortante" },
-  { value: "farmaceutico", labelKey: "Farmacéutico" },
-]
+const wasteTypes = WASTE_TYPES.map(type => ({
+  value: type.value,
+  label: type.label,
+  labelKey: `${type.value}`,
+}));
 
 export default function EditarResiduoPage() {
   const params = useParams();
@@ -62,7 +62,7 @@ export default function EditarResiduoPage() {
         tipo: form.tipo,
         cantidad: Number.parseFloat(form.cantidad),
         ubicacion: form.ubicacion,
-        updated_at: new Date().toISOString(),
+        // updated_at: new Date().toISOString(),
       })
       .eq("id", id)
     setLoading(false)
@@ -70,6 +70,7 @@ export default function EditarResiduoPage() {
       alert(t("Residuo actualizado correctamente!"))
       router.push("/residuos")
     } else {
+      console.error("Error al actualizar residuo:", error)
       alert("Error al actualizar residuo")
     }
   }

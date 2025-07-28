@@ -88,10 +88,10 @@ export default function ResiduosPage() {
 
   const loadResiduos = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Try RPC function first
       const { data: rpcData, error: rpcError } = await supabase
         .rpc('get_residuos_with_users');
@@ -128,7 +128,7 @@ export default function ResiduosPage() {
 
       if (error) throw error;
       setResiduos(data || []);
-      
+
     } catch (error) {
       console.error("Error loading residuos:", error);
       toast({
@@ -301,7 +301,7 @@ export default function ResiduosPage() {
                 />
               </div>
             </div>
-            
+
             <div className="lg:w-48">
               <Select value={filterTipo} onValueChange={setFilterTipo}>
                 <SelectTrigger>
@@ -411,10 +411,13 @@ export default function ResiduosPage() {
                                 Editar
                               </DropdownMenuItem>
                             </Link>
-                            <DropdownMenuItem>
-                              <QrCode className="mr-2 h-4 w-4" />
-                              Generar QR
-                            </DropdownMenuItem>
+                            <Link href={`/etiquetas/generar`}>
+                              <DropdownMenuItem>
+                                <QrCode className="mr-2 h-4 w-4" />
+                                Generar QR
+                              </DropdownMenuItem>
+                            </Link>
+
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
